@@ -1,0 +1,6 @@
+[config]
+io_config_file=io_config.xml
+
+[display]
+monitor=sceptre
+screen=0
