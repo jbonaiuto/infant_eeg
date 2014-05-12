@@ -5,13 +5,159 @@ from infant_eeg.config import MONITOR, SCREEN, NETSTATION_IP, DATA_DIR
 import egi.simple as egi
 import numpy as np
 
+class Task:
+    def __init__(self, n_blocks, n_trials, distractor_duration_ms, min_delay_ms, max_delay_ms, ns):
+        self.ns=ns
+
+        # Window to use
+        wintype='pyglet' # use pyglet if possible, it's faster at event handling
+        self.win = Window(
+            [1600,900],
+            monitor=MONITOR,
+            screen=SCREEN,
+            units="deg",
+            fullscr=True,
+            color=[-1,-1,-1],
+            winType=wintype)
+        self.win.setMouseVisible(False)
+        event.clearEvents()
+
+        # Measure frame rate
+        self.mean_ms_per_frame, std_ms_per_frame, median_ms_per_frame=visual.getMsPerFrame(self.win, nFrames=60,
+            showVisual=True)
+
+        min_delay_frames=int(min_delay_ms/self.mean_ms_per_frame)
+        max_delay_frames=int(max_delay_ms/self.mean_ms_per_frame)
+
+        self.blocks={
+            'joy': Block('joy', n_trials, min_delay_frames, max_delay_frames, self.win),
+            'sad': Block('sad', n_trials, min_delay_frames, max_delay_frames, self.win),
+            'move': Block('move', n_trials, min_delay_frames, max_delay_frames, self.win),
+            'shuf': Block('shuf', n_trials, min_delay_frames, max_delay_frames, self.win)
+        }
+        self.blocks['joy'].add_stimulus('f01','F01-Joy-Face Forward.mpg')
+        self.blocks['joy'].add_stimulus('f03','F03-Joy-Face Forward.mpg')
+        self.blocks['sad'].add_stimulus('f01','F01-Sadness-Face Forward.mpg')
+        self.blocks['sad'].add_stimulus('f03','F03-Sadness-Face Forward.mpg')
+        self.blocks['move'].add_stimulus('f06','F06-MouthOpening-Face Forward.mpg')
+        self.blocks['move'].add_stimulus('f07','F07-MouthOpening-Face Forward.mpg')
+        self.blocks['shuf'].add_stimulus('f01','F01-Joy-Face Forward.shuffled.mpg')
+        self.blocks['shuf'].add_stimulus('f01','F01-Sadness-Face Forward.shuffled.mpg')
+        self.blocks['shuf'].add_stimulus('f03','F03-Joy-Face Forward.shuffled.mpg')
+        self.blocks['shuf'].add_stimulus('f03','F03-Sadness-Face Forward.shuffled.mpg')
+        self.blocks['shuf'].add_stimulus('f06','F06-MouthOpening-Face Forward.shuffled.mpg')
+        self.blocks['shuf'].add_stimulus('f07','F07-MouthOpening-Face Forward.shuffled.mpg')
+
+        self.n_blocks=n_blocks
+        self.block_order=[]
+        while len(self.block_order)<n_blocks:
+            self.block_order.extend(self.blocks.keys())
+        np.random.shuffle(self.block_order)
+
+        distractor_duration_frames=int(distractor_duration_ms/self.mean_ms_per_frame)
+        self.distractor_set=DistractorSet(os.path.join(DATA_DIR,'images','distractors','space'),
+            os.path.join(DATA_DIR,'sounds','distractors'),distractor_duration_frames, self.win)
+
+    def run(self):
+        for block_name in self.block_order:
+            self.distractor_set.run()
+            if self.ns is not None:
+                self.ns.sync()
+            self.blocks[block_name].run()
+
+
+class Block:
+    def __init__(self, code, trials, min_delay_frames, max_delay_frames, win, ns):
+        self.code=code
+        self.trials=trials
+        self.win=win
+        self.min_delay_frames=min_delay_frames
+        self.max_delay_frames=max_delay_frames
+        self.ns=ns
+        self.stimuli=[]        
+    
+    def add_stimulus(self, actor, file_name):
+        stim=MovieStimulus(self.win, actor, file_name)
+        self.stimuli.append(stim)
+
+    def run(self):
+        n_movies=len(self.stimuli)
+        vid_order=range(n_movies)
+        if n_movies<self.trials:
+            vid_order=[]
+            while len(vid_order)<self.trials:
+                vid_order.extend(range(n_movies))
+        np.random.shuffle(vid_order)
+
+        self.ns.StartRecording()
+        self.ns.sync()
+        self.ns.send_event( 'blck', label="block start", timestamp=egi.ms_localtime(), table = {'code' : self.code} )
+
+        for t in range(self.trials):
+            delay_frames=self.min_delay_frames+int(np.random.rand()*(self.max_delay_frames-self.min_delay_frames))
+            video_idx=vid_order[t]
+            self.stimuli[video_idx].stim.seek(0)
+            self.stimuli[video_idx].stim.status=0
+            self.ns.send_event( 'mov_', label="movie start", timestamp=egi.ms_localtime(),
+                table = {'code' : self.code, 'actr' : self.stimuli[video_idx].actor} )
+            while not self.stimuli[video_idx].stim.status==visual.FINISHED:
+                self.stimuli[video_idx].stim.draw()
+                self.win.flip()
+            self.ns.send_event( 'mov_', label="movie end", timestamp=egi.ms_localtime())
+            for i in range(delay_frames):
+                self.win.flip()
+
+        self.ns.StopRecording()
+
+
 class MovieStimulus:
-    def __init__(self, win, category, type, actor, file_name):
-        self.category=category
-        self.type=type
+    def __init__(self, win, actor, file_name):
         self.actor=actor
         self.file_name=file_name
         self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name))
+
+
+class DistractorSet:
+    def __init__(self, image_path, sound_path, duration_frames, win):
+        self.win=win
+        self.pictures=[]
+        image_files = [ f for f in os.listdir(image_path) if os.path.isfile(os.path.join(image_path,f)) ]
+        for file in image_files:
+            self.pictures.append(visual.ImageStim(win, os.path.join(image_path,file)))
+
+        self.sounds=[]
+        sound_files = [ f for f in os.listdir(sound_path) if os.path.isfile(os.path.join(sound_path,f)) ]
+        for file in sound_files:
+            self.sounds.append(sound.Sound(os.path.join(sound_path,file)))
+
+        self.star_picture=visual.ImageStim(win,os.path.join(DATA_DIR,'images','distractors','star-cartoon.jpg'))
+
+        self.duration_frames=duration_frames
+
+    def run(self):
+        # clear any keystrokes before starting
+        event.clearEvents()
+        all_keys=[]
+
+        # wait for a keypress
+        while len(all_keys)==0:
+            distractor_picture_idx=np.random.choice(range(len(self.pictures)))
+            distractor_sound_idx=np.random.choice(range(len(self.sounds)))
+            self.sounds[distractor_sound_idx].play()
+            for i in range(self.duration_frames):
+                self.pictures[distractor_picture_idx].draw()
+                self.win.flip()
+            all_keys=event.getKeys()
+
+        # clear any keystrokes before starting
+        event.clearEvents()
+        all_keys=[]
+        # wait for a keypress
+        while len(all_keys)==0:
+            self.star_picture.draw()
+            self.win.flip()
+            all_keys=event.getKeys()
+
 
 # experiment parameters
 expInfo = {
@@ -27,151 +173,19 @@ dlg = gui.DlgFromDict(
     fixed=['dateStr']
 )
 
-# Window to use
-wintype='pyglet' # use pyglet if possible, it's faster at event handling
-win = Window(
-    [1600,900],
-    monitor=MONITOR,
-    screen=SCREEN,
-    units="deg",
-    fullscr=True,
-    color=[-1,-1,-1],
-    winType=wintype)
-win.setMouseVisible(False)
-event.clearEvents()
-
-distractor_picture_file_names=[
-    'alien1.jpg','alien2.jpg','alien3.jpg','alien5.jpg','alien6.jpg','moon3.jpg','planet2.jpg','planet3.jpg',
-    'rocket1.jpg','rocket2.jpg','sun1.jpg'
-]
-distractor_pictures=[]
-for file in distractor_picture_file_names:
-    distractor_pictures.append(visual.ImageStim(win, os.path.join(DATA_DIR,'images',file)))
-
-distractor_sound_file_names=[
-    'ascend.wav','descend.wav','sound1.wav','sound2.wav','sound3.wav','sound4.wav','sound5.wav','whistle.wav'
-]
-distractor_sounds=[]
-for file in distractor_sound_file_names:
-    distractor_sounds.append(sound.Sound(os.path.join(DATA_DIR,'sounds',file)))
-
-star_picture=visual.ImageStim(win,os.path.join(DATA_DIR,'images','star-cartoon.jpg'))
-
-block_movies={
-    'joy':[],
-    'sad':[],
-    'movement':[],
-    'shuffled':[]
-}
-block_movies['joy'].append(MovieStimulus(win, 'emotion','joy','f01','F01-Joy-Face Forward.mpg'))
-block_movies['joy'].append(MovieStimulus(win, 'emotion','joy','f03','F03-Joy-Face Forward.mpg'))
-block_movies['sad'].append(MovieStimulus(win, 'emotion','sad','f01','F01-Sadness-Face Forward.mpg'))
-block_movies['sad'].append(MovieStimulus(win, 'emotion','sad','f03','F03-Sadness-Face Forward.mpg'))
-block_movies['movement'].append(MovieStimulus(win, 'movement','mouth_open','f06','F06-MouthOpening-Face Forward.mpg'))
-block_movies['movement'].append(MovieStimulus(win, 'movement','mouth_open','f07','F07-MouthOpening-Face Forward.mpg'))
-block_movies['shuffled'].append(MovieStimulus(win, 'shuffled','joy','f01','F01-Joy-Face Forward.shuffled.mpg'))
-block_movies['shuffled'].append(MovieStimulus(win, 'shuffled','sad','f01','F01-Sadness-Face Forward.shuffled.mpg'))
-block_movies['shuffled'].append(MovieStimulus(win, 'shuffled','joy','f03','F03-Joy-Face Forward.shuffled.mpg'))
-block_movies['shuffled'].append(MovieStimulus(win, 'shuffled','sad','f03','F03-Sadness-Face Forward.shuffled.mpg'))
-block_movies['shuffled'].append(MovieStimulus(win, 'shuffled','mouth_open','f06','F06-MouthOpening-Face Forward.shuffled.mpg'))
-block_movies['shuffled'].append(MovieStimulus(win, 'shuffled','mouth_open','f07','F07-MouthOpening-Face Forward.shuffled.mpg'))
-
-n_blocks=20
-block_order=[]
-while len(block_order)<n_blocks:
-    block_order.extend(block_movies.keys())
-np.random.shuffle(block_order)
-
-def run_block(block_name, trials, min_delay_frames, max_delay_frames):
-    n_movies=len(block_movies[block_name])
-    vid_order=range(n_movies)
-    if n_movies<trials:
-        vid_order=[]
-        while len(vid_order)<trials:
-            vid_order.extend(range(n_movies))
-    np.random.shuffle(vid_order)
-    for t in range(trials):
-        delay_frames=min_delay_frames+int(np.random.rand()*(max_delay_frames-min_delay_frames))
-        video_idx=vid_order[t]
-        movie=block_movies[block_name][video_idx]
-        movie.stim.seek(0)
-        movie.stim.status=0
-        while not movie.stim.status==visual.FINISHED:
-            movie.stim.draw()
-            win.flip()
-        for i in range(delay_frames):
-            win.flip()
-
-def run_distractor(distractor_duration_frames):
-    # clear any keystrokes before starting
-    event.clearEvents()
-    all_keys=[]
-
-    # wait for a keypress
-    while len(all_keys)==0:
-        distractor_picture_idx=np.random.choice(range(len(distractor_pictures)))
-        distractor_sound_idx=np.random.choice(range(len(distractor_sounds)))
-        distractor_sounds[distractor_sound_idx].play()
-        for i in range(distractor_duration_frames):
-            distractor_pictures[distractor_picture_idx].draw()
-            win.flip()
-        all_keys=event.getKeys()
-
-    # clear any keystrokes before starting
-    event.clearEvents()
-    all_keys=[]
-    # wait for a keypress
-    while len(all_keys)==0:
-        star_picture.draw()
-        win.flip()
-        all_keys=event.getKeys()
-
-# Measure frame rate
-mean_ms_per_frame, std_ms_per_frame, median_ms_per_frame=visual.getMsPerFrame(win, nFrames=60, showVisual=True)
-min_delay_ms=800.0
-max_delay_ms=1200.0
-min_delay_frames=int(min_delay_ms/mean_ms_per_frame)
-max_delay_frames=int(max_delay_ms/mean_ms_per_frame)
-distractor_duration_ms=2000.0
-distractor_duration_frames=int(distractor_duration_ms/mean_ms_per_frame)
-
-egi_connected=False
 ns = egi.Netstation()
 ms_localtime = egi.ms_localtime
-#try:
-#    ns.connect(NETSTATION_IP, 55513)
-#    ns.BeginSession()
-#
-#    ns.sync()
-#
-#
-#    ns.StartRecording()
-#    egi_connected=True
-#except:
-#    print('Could not connect with NetStation!')
-#    egi_connected=False
+try:
+    ns.connect(NETSTATION_IP, 55513)
+    ns.BeginSession()
+    ns.sync()
+except:
+    print('Could not connect with NetStation!')
+    ns=None
 
+task=Task(20, 6, 2000.0, 800.0, 1200.0, ns)
+task.run()
 
-
-#if egi_connected:
-#    ## # optionally can perform additional synchronization
-#    ## ns.sync()
-#    ns.send_event( 'evt_', label="event", timestamp=egi.ms_localtime(), table = {'fld1' : 123, 'fld2' : "abc", 'fld3' : 0.042} )
-
-for block_name in block_order:
-    run_distractor(distractor_duration_frames)
-    run_block(block_name,6,min_delay_frames,max_delay_frames)
-
-#video_stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies','nat-oxen.mpg.avi'),size=(win.size[0],win.size[1]))
-#video_stim.seek(0)
-#while not video_stim.status==visual.FINISHED:
-#    video_stim.draw()
-#    win.flip()
-
-# >>> we have sent all we wanted, time to go home >>>
-if egi_connected:
-    ns.StopRecording()
-
-
+if ns:
     ns.EndSession()
     ns.disconnect()
