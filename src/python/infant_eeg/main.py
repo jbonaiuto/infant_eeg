@@ -46,10 +46,10 @@ class Task:
 
         # Initialize blocks
         self.blocks={
-            'joy': Block('joy', n_trials, min_delay_frames, max_delay_frames, self.win),
-            'sad': Block('sad', n_trials, min_delay_frames, max_delay_frames, self.win),
-            'move': Block('move', n_trials, min_delay_frames, max_delay_frames, self.win),
-            'shuf': Block('shuf', n_trials, min_delay_frames, max_delay_frames, self.win)
+            'joy': Block('joy', n_trials, min_delay_frames, max_delay_frames, self.win, self.ns),
+            'sad': Block('sad', n_trials, min_delay_frames, max_delay_frames, self.win, self.ns),
+            'move': Block('move', n_trials, min_delay_frames, max_delay_frames, self.win, self.ns),
+            'shuf': Block('shuf', n_trials, min_delay_frames, max_delay_frames, self.win, self.ns)
         }
         self.blocks['joy'].add_stimulus('f01','F01-Joy-Face Forward.mpg')
         self.blocks['joy'].add_stimulus('f03','F03-Joy-Face Forward.mpg')
@@ -90,7 +90,8 @@ class Task:
             if self.ns is not None:
                 self.ns.sync()
 
-            self.blocks[block_name].run()
+            if not self.blocks[block_name].run():
+                break
 
 
 class Block:
@@ -127,6 +128,7 @@ class Block:
     def run(self):
         """
         Run the block
+        returns True if task should continue, False if should quit
         """
         # Compute trial order
         n_movies=len(self.stimuli)
@@ -152,6 +154,10 @@ class Block:
             self.stimuli[video_idx].stim.seek(0)
             self.stimuli[video_idx].stim.status=0
 
+            # clear any keystrokes before starting
+            event.clearEvents()
+            all_keys=[]
+
             # Tell netstation the movie is starting
             if self.ns is not None:
                 self.ns.send_event( 'mov_', label="movie start", timestamp=egi.ms_localtime(),
@@ -161,10 +167,15 @@ class Block:
             while not self.stimuli[video_idx].stim.status==visual.FINISHED:
                 self.stimuli[video_idx].stim.draw()
                 self.win.flip()
+            all_keys=event.getKeys()
 
             # Tell netstation the movie has stopped
             if self.ns is not None:
                 self.ns.send_event( 'mov_', label="movie end", timestamp=egi.ms_localtime())
+
+            # Quit block
+            if len(all_keys) and all_keys[0].upper() in ['Q','ESCAPE']:
+                return False
 
             # Black screen for delay
             for i in range(delay_frames):
@@ -173,6 +184,8 @@ class Block:
         # Stop netstation recording
         if self.ns is not None:
             self.ns.StopRecording()
+
+        return True
 
 
 class MovieStimulus:
@@ -247,47 +260,52 @@ class DistractorSet:
             # Look for key press
             all_keys=event.getKeys()
 
-        # clear any keystrokes before starting
-        event.clearEvents()
-        all_keys=[]
+        # taking the first keypress in the list
+        thisKey=all_keys[0].upper()
+        # show reward image if R pressed
+        if thisKey=='R':
+            # clear any keystrokes before starting
+            event.clearEvents()
+            all_keys=[]
 
-        # show reward image until keypress
-        while len(all_keys)==0:
-            self.reward_image.draw()
-            self.win.flip()
-            all_keys=event.getKeys()
+            # show reward image until keypress
+            while len(all_keys)==0:
+                self.reward_image.draw()
+                self.win.flip()
+                all_keys=event.getKeys()
 
 
-# experiment parameters
-expInfo = {
-    'subject': '',
-    'dateStr': data.getDateStr(),
-    'condition': ''
-}
+if __name__=='__main__':
+    # experiment parameters
+    expInfo = {
+        'subject': '',
+        'dateStr': data.getDateStr(),
+        'condition': ''
+    }
 
-#present a dialogue to change params
-dlg = gui.DlgFromDict(
-    expInfo,
-    title='Faces',
-    fixed=['dateStr']
-)
+    #present a dialogue to change params
+    dlg = gui.DlgFromDict(
+        expInfo,
+        title='Faces',
+        fixed=['dateStr']
+    )
 
-# connect to netstation
-ns = egi.Netstation()
-ms_localtime = egi.ms_localtime
-try:
-    ns.connect(NETSTATION_IP, 55513)
-    ns.BeginSession()
-    ns.sync()
-except:
-    print('Could not connect with NetStation!')
-    ns=None
+    # connect to netstation
+    ns = egi.Netstation()
+    ms_localtime = egi.ms_localtime
+    try:
+        ns.connect(NETSTATION_IP, 55513)
+        ns.BeginSession()
+        ns.sync()
+    except:
+        print('Could not connect with NetStation!')
+        ns=None
 
-# run task
-task=Task(20, 6, 2000.0, 800.0, 1200.0, ns)
-task.run()
+    # run task
+    task=Task(20, 6, 2000.0, 800.0, 1200.0, ns)
+    task.run()
 
-# close netstation connection
-if ns:
-    ns.EndSession()
-    ns.disconnect()
+    # close netstation connection
+    if ns:
+        ns.EndSession()
+        ns.disconnect()
