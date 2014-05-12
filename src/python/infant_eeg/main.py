@@ -5,6 +5,14 @@ from infant_eeg.config import MONITOR, SCREEN, NETSTATION_IP, DATA_DIR
 import egi.simple as egi
 import numpy as np
 
+class MovieStimulus:
+    def __init__(self, win, category, type, actor, file_name):
+        self.category=category
+        self.type=type
+        self.actor=actor
+        self.file_name=file_name
+        self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name))
+
 # experiment parameters
 expInfo = {
     'subject': '',
@@ -49,26 +57,29 @@ for file in distractor_sound_file_names:
 
 star_picture=visual.ImageStim(win,os.path.join(DATA_DIR,'images','star-cartoon.jpg'))
 
-block_movie_file_names={
-    'joy': ['F01-Joy-Face Forward.mpg','F03-Joy-Face Forward.mpg'],
-    'sad': ['F01-Sadness-Face Forward.mpg','F03-Sadness-Face Forward.mpg'],
-    'move': ['F06-MouthOpening-Face Forward.mpg','F07-MouthOpening-Face Forward.mpg'],
-    'shuffled': ['F01-Joy-Face Forward.shuffled.mpg','F01-Sadness-Face Forward.shuffled.mpg',
-                 'F03-Joy-Face Forward.shuffled.mpg','F03-Sadness-Face Forward.shuffled.mpg',
-                 'F06-MouthOpening-Face Forward.shuffled.mpg','F07-MouthOpening-Face Forward.shuffled.mpg']
+block_movies={
+    'joy':[],
+    'sad':[],
+    'movement':[],
+    'shuffled':[]
 }
-
-block_movies={}
-for block_name, files in block_movie_file_names.iteritems():
-    block_movies[block_name]=[]
-    for file in files:
-        block_movies[block_name].append(visual.MovieStim(win, os.path.join(DATA_DIR,'movies',file),
-            size=(win.size[0],win.size[1])))
+block_movies['joy'].append(MovieStimulus(win, 'emotion','joy','f01','F01-Joy-Face Forward.mpg'))
+block_movies['joy'].append(MovieStimulus(win, 'emotion','joy','f03','F03-Joy-Face Forward.mpg'))
+block_movies['sad'].append(MovieStimulus(win, 'emotion','sad','f01','F01-Sadness-Face Forward.mpg'))
+block_movies['sad'].append(MovieStimulus(win, 'emotion','sad','f03','F03-Sadness-Face Forward.mpg'))
+block_movies['movement'].append(MovieStimulus(win, 'movement','mouth_open','f06','F06-MouthOpening-Face Forward.mpg'))
+block_movies['movement'].append(MovieStimulus(win, 'movement','mouth_open','f07','F07-MouthOpening-Face Forward.mpg'))
+block_movies['shuffled'].append(MovieStimulus(win, 'shuffled','joy','f01','F01-Joy-Face Forward.shuffled.mpg'))
+block_movies['shuffled'].append(MovieStimulus(win, 'shuffled','sad','f01','F01-Sadness-Face Forward.shuffled.mpg'))
+block_movies['shuffled'].append(MovieStimulus(win, 'shuffled','joy','f03','F03-Joy-Face Forward.shuffled.mpg'))
+block_movies['shuffled'].append(MovieStimulus(win, 'shuffled','sad','f03','F03-Sadness-Face Forward.shuffled.mpg'))
+block_movies['shuffled'].append(MovieStimulus(win, 'shuffled','mouth_open','f06','F06-MouthOpening-Face Forward.shuffled.mpg'))
+block_movies['shuffled'].append(MovieStimulus(win, 'shuffled','mouth_open','f07','F07-MouthOpening-Face Forward.shuffled.mpg'))
 
 n_blocks=20
 block_order=[]
 while len(block_order)<n_blocks:
-    block_order.extend(block_movie_file_names.keys())
+    block_order.extend(block_movies.keys())
 np.random.shuffle(block_order)
 
 def run_block(block_name, trials, min_delay_frames, max_delay_frames):
@@ -82,11 +93,11 @@ def run_block(block_name, trials, min_delay_frames, max_delay_frames):
     for t in range(trials):
         delay_frames=min_delay_frames+int(np.random.rand()*(max_delay_frames-min_delay_frames))
         video_idx=vid_order[t]
-        video_stim=block_movies[block_name][video_idx]
-        video_stim.seek(0)
-        video_stim.status=0
-        while not video_stim.status==visual.FINISHED:
-            video_stim.draw()
+        movie=block_movies[block_name][video_idx]
+        movie.stim.seek(0)
+        movie.stim.status=0
+        while not movie.stim.status==visual.FINISHED:
+            movie.stim.draw()
             win.flip()
         for i in range(delay_frames):
             win.flip()
