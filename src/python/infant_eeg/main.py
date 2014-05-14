@@ -273,9 +273,13 @@ class DistractorSet:
 if __name__=='__main__':
     # experiment parameters
     expInfo = {
-        'subject': '',
-        'dateStr': data.getDateStr(),
-        'condition': ''
+        'child_id': '',
+        'date': data.getDateStr(),
+        'session': '',
+        'diagnosis': '',
+        'age': '',
+        'gender': '',
+        'experimenter_id': '',
     }
 
     #present a dialogue to change params
