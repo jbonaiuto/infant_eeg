@@ -1,0 +1,32 @@
+<experiment name="emotion_faces" type="block" num_blocks="20">
+    <blocks>
+        <block name="joy" num_trials="6" min_iti="800.0" max_iti="1200.0">
+            <videos>
+                <video movement="smil" actor="f01" file_name="F01-Joy-Face Forward.mpg"/>
+                <video movement="smil" actor="f03" file_name="F03-Joy-Face Forward.mpg"/>
+            </videos>
+        </block>
+        <block name="sad" num_trials="6" min_iti="800.0" max_iti="1200.0">
+            <videos>
+                <video movement="frwn" actor="f01" file_name="F01-Sadness-Face Forward.mpg"/>
+                <video movement="frwn" actor="f03" file_name="F03-Sadness-Face Forward.mpg"/>
+            </videos>
+        </block>
+        <block name="move" num_trials="6" min_iti="800.0" max_iti="1200.0">
+            <videos>
+                <video movement="mopn" actor="f06" file_name="F06-MouthOpening-Face Forward.mpg"/>
+                <video movement="mopn" actor="f07" file_name="F07-MouthOpening-Face Forward.mpg"/>
+            </videos>
+        </block>
+        <block name="shuf" num_trials="6" min_iti="800.0" max_iti="1200.0">
+            <videos>
+                <video movement="smil" actor="f01" file_name="F01-Joy-Face Forward.shuffled.mpg"/>
+                <video movement="frwn" actor="f01" file_name="F01-Sadness-Face Forward.shuffled.mpg"/>
+                <video movement="smil" actor="f03" file_name="F03-Joy-Face Forward.shuffled.mpg"/>
+                <video movement="frwn" actor="f03" file_name="F03-Sadness-Face Forward.shuffled.mpg"/>
+                <video movement="mopn" actor="f06" file_name="F06-MouthOpening-Face Forward.shuffled.mpg"/>
+                <video movement="mopn" actor="f07" file_name="F07-MouthOpening-Face Forward.shuffled.mpg"/>
+            </videos>
+        </block>
+    </blocks>
+</experiment>

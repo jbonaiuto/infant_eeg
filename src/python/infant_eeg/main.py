@@ -1,27 +1,22 @@
 import os
 from psychopy import data, gui, event, visual, sound
 from psychopy.visual import Window
-from infant_eeg.config import MONITOR, SCREEN, NETSTATION_IP, DATA_DIR
+from xml.etree import ElementTree as ET
+from infant_eeg.config import MONITOR, SCREEN, NETSTATION_IP, DATA_DIR, CONF_DIR
 import egi.simple as egi
 import numpy as np
 
-class Task:
+class Experiment:
     """
     A simple observation task - blocks of various movies presented with distractor images/sounds in between each block
     """
-
-    def __init__(self, n_blocks, n_trials, distractor_duration_ms, min_delay_ms, max_delay_ms, ns):
+    def __init__(self, file_name):
         """
-        n_blocks - number of blocks to run for
-        n_trials - number of trials per block
-        distractor_duration_ms - duration of each distractor image in ms
-        min_delay_ms - minimum delay between movies in ms
-        max_delay_ms - maximum delay between movies in ms
-        ns - netstation connection
+        file_name - name of XML file containing experiment definition
         """
-
-        # Keep connection to netstation
-        self.ns=ns
+        self.name=None
+        self.num_blocks=0
+        self.blocks={}
 
         # Window to use
         wintype='pyglet' # use pyglet if possible, it's faster at event handling
@@ -40,58 +35,65 @@ class Task:
         self.mean_ms_per_frame, std_ms_per_frame, median_ms_per_frame=visual.getMsPerFrame(self.win, nFrames=60,
             showVisual=True)
 
-        # Compute delay in frames based on frame rate
-        min_delay_frames=int(min_delay_ms/self.mean_ms_per_frame)
-        max_delay_frames=int(max_delay_ms/self.mean_ms_per_frame)
-
-        # Initialize blocks
-        self.blocks={
-            'joy': Block('joy', n_trials, min_delay_frames, max_delay_frames, self.win, self.ns),
-            'sad': Block('sad', n_trials, min_delay_frames, max_delay_frames, self.win, self.ns),
-            'move': Block('move', n_trials, min_delay_frames, max_delay_frames, self.win, self.ns),
-            'shuf': Block('shuf', n_trials, min_delay_frames, max_delay_frames, self.win, self.ns)
-        }
-        self.blocks['joy'].add_stimulus('f01','F01-Joy-Face Forward.mpg')
-        self.blocks['joy'].add_stimulus('f03','F03-Joy-Face Forward.mpg')
-        self.blocks['sad'].add_stimulus('f01','F01-Sadness-Face Forward.mpg')
-        self.blocks['sad'].add_stimulus('f03','F03-Sadness-Face Forward.mpg')
-        self.blocks['move'].add_stimulus('f06','F06-MouthOpening-Face Forward.mpg')
-        self.blocks['move'].add_stimulus('f07','F07-MouthOpening-Face Forward.mpg')
-        self.blocks['shuf'].add_stimulus('f01','F01-Joy-Face Forward.shuffled.mpg')
-        self.blocks['shuf'].add_stimulus('f01','F01-Sadness-Face Forward.shuffled.mpg')
-        self.blocks['shuf'].add_stimulus('f03','F03-Joy-Face Forward.shuffled.mpg')
-        self.blocks['shuf'].add_stimulus('f03','F03-Sadness-Face Forward.shuffled.mpg')
-        self.blocks['shuf'].add_stimulus('f06','F06-MouthOpening-Face Forward.shuffled.mpg')
-        self.blocks['shuf'].add_stimulus('f07','F07-MouthOpening-Face Forward.shuffled.mpg')
-
-        # Create random block order
-        self.n_blocks=n_blocks
-        self.block_order=[]
-        while len(self.block_order)<n_blocks:
-            self.block_order.extend(self.blocks.keys())
-        np.random.shuffle(self.block_order)
-
         # Compute distractor duration in frames based on frame rate
-        distractor_duration_frames=int(distractor_duration_ms/self.mean_ms_per_frame)
+        distractor_duration_frames=int(2000.0/self.mean_ms_per_frame)
 
         # Initialize set of distractors
         self.distractor_set=DistractorSet(os.path.join(DATA_DIR,'images','distractors','space'),
             os.path.join(DATA_DIR,'sounds','distractors'),
             os.path.join(DATA_DIR,'images','distractors','star-cartoon.jpg'),distractor_duration_frames, self.win)
 
-    def run(self):
+        self.read_xml(file_name)
+
+    def run(self, ns):
         """
         Run task
+        ns - netstation connection
         """
+        # Create random block order
+        self.block_order=[]
+        while len(self.block_order)<self.num_blocks:
+            self.block_order.extend(self.blocks.keys())
+        np.random.shuffle(self.block_order)
+
         for block_name in self.block_order:
             self.distractor_set.run()
 
             # Re-synch with netstation in between blocks
-            if self.ns is not None:
-                self.ns.sync()
+            if ns is not None:
+                ns.sync()
 
-            if not self.blocks[block_name].run():
+            if not self.blocks[block_name].run(ns):
                 break
+
+    def read_xml(self, file_name):
+        root_element=ET.parse(file_name).getroot()
+        self.name=root_element.attrib['name']
+        self.type=root_element.attrib['type']
+        self.num_blocks=int(root_element.attrib['num_blocks'])
+
+        blocks_node=root_element.find('blocks')
+        block_nodes=blocks_node.findall('block')
+        for block_node in block_nodes:
+            block_name=block_node.attrib['name']
+            num_trials=int(block_node.attrib['num_trials'])
+            min_iti_ms=float(block_node.attrib['min_iti'])
+            max_iti_ms=float(block_node.attrib['max_iti'])
+
+            # Compute delay in frames based on frame rate
+            min_iti_frames=int(min_iti_ms/self.mean_ms_per_frame)
+            max_iti_frames=int(max_iti_ms/self.mean_ms_per_frame)
+
+            block=Block(block_name, num_trials, min_iti_frames, max_iti_frames, self.win)
+
+            videos_node=block_node.find('videos')
+            video_nodes=videos_node.findall('video')
+            for video_node in video_nodes:
+                movement=video_node.attrib['movement']
+                actor=video_node.attrib['actor']
+                file_name=video_node.attrib['file_name']
+                block.stimuli.append(MovieStimulus(self.win, movement, actor, file_name))
+            self.blocks[block_name]=block
 
 
 class Block:
@@ -99,35 +101,25 @@ class Block:
     A block of movies of the same type
     """
 
-    def __init__(self, code, trials, min_delay_frames, max_delay_frames, win, ns):
+    def __init__(self, name, trials, min_iti_frames, max_iti_frames, win):
         """
         code - code for block to send to netstation
         trials - number of trials to run
         min_delay_frames - minimum delay between movies in frames
         max_delay_frames - maximum delay between movies in frames
         win - psychopy window to use
-        ns - connection to netstation
         """
-        self.code=code
+        self.code=name
         self.trials=trials
         self.win=win
-        self.min_delay_frames=min_delay_frames
-        self.max_delay_frames=max_delay_frames
-        self.ns=ns
-        self.stimuli=[]        
+        self.min_iti_frames=min_iti_frames
+        self.max_iti_frames=max_iti_frames
+        self.stimuli=[]
     
-    def add_stimulus(self, actor, file_name):
-        """
-        Add a stimulus movie to the block
-        actor - actor ID
-        file_name - movie file to load
-        """
-        stim=MovieStimulus(self.win, actor, file_name)
-        self.stimuli.append(stim)
-
-    def run(self):
+    def run(self, ns):
         """
         Run the block
+        ns - connection to netstation
         returns True if task should continue, False if should quit
         """
         # Compute trial order
@@ -140,14 +132,14 @@ class Block:
         np.random.shuffle(vid_order)
 
         # Start netstation recording
-        if self.ns is not None:
-            self.ns.StartRecording()
-            self.ns.sync()
-            self.ns.send_event( 'blck', label="block start", timestamp=egi.ms_localtime(), table = {'code' : self.code} )
+        if ns is not None:
+            ns.StartRecording()
+            ns.sync()
+            ns.send_event( 'blck', label="block start", timestamp=egi.ms_localtime(), table = {'code' : self.code} )
 
         for t in range(self.trials):
             # Compute random delay period
-            delay_frames=self.min_delay_frames+int(np.random.rand()*(self.max_delay_frames-self.min_delay_frames))
+            delay_frames=self.min_iti_frames+int(np.random.rand()*(self.max_iti_frames-self.min_iti_frames))
 
             # Reset movie to beginning
             video_idx=vid_order[t]
@@ -156,12 +148,13 @@ class Block:
 
             # clear any keystrokes before starting
             event.clearEvents()
-            all_keys=[]
 
             # Tell netstation the movie is starting
-            if self.ns is not None:
-                self.ns.send_event( 'mov_', label="movie start", timestamp=egi.ms_localtime(),
-                    table = {'code' : self.code, 'actr' : self.stimuli[video_idx].actor} )
+            if ns is not None:
+                ns.send_event( 'mov1', label="movie start", timestamp=egi.ms_localtime(),
+                    table = {'code' : self.code,
+                             'mvmt': self.stimuli[video_idx].movement,
+                             'actr' : self.stimuli[video_idx].actor} )
 
             # Play movie
             while not self.stimuli[video_idx].stim.status==visual.FINISHED:
@@ -170,8 +163,8 @@ class Block:
             all_keys=event.getKeys()
 
             # Tell netstation the movie has stopped
-            if self.ns is not None:
-                self.ns.send_event( 'mov_', label="movie end", timestamp=egi.ms_localtime())
+            if ns is not None:
+                ns.send_event( 'mov2', label="movie end", timestamp=egi.ms_localtime())
 
             # Quit block
             if len(all_keys) and all_keys[0].upper() in ['Q','ESCAPE']:
@@ -182,8 +175,8 @@ class Block:
                 self.win.flip()
 
         # Stop netstation recording
-        if self.ns is not None:
-            self.ns.StopRecording()
+        if ns is not None:
+            ns.StopRecording()
 
         return True
 
@@ -193,13 +186,15 @@ class MovieStimulus:
     A movie stimulus
     """
 
-    def __init__(self, win, actor, file_name):
+    def __init__(self, win, movement, actor, file_name):
         """
         win - window to show movie in
+        movement - movement being made in movie
         actor - ID of actor
         file_name - file containing movie
         """
         self.actor=actor
+        self.movement=movement
         self.file_name=file_name
         self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name))
 
@@ -302,8 +297,8 @@ if __name__=='__main__':
         ns=None
 
     # run task
-    task=Task(20, 6, 2000.0, 800.0, 1200.0, ns)
-    task.run()
+    exp=Experiment(os.path.join(CONF_DIR,'emotion_faces_experiment.xml'))
+    exp.run(ns)
 
     # close netstation connection
     if ns:
