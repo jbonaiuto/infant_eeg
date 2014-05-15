@@ -1,5 +1,11 @@
+import sys
+if sys.platform=='win32':
+    import ctypes
+    avbin_lib=ctypes.cdll.LoadLibrary('avbin')
+    import psychopy.visual
+from psychopy import visual
 import os
-from psychopy import data, gui, event, visual, sound
+from psychopy import data, gui, event, sound
 from psychopy.visual import Window
 from xml.etree import ElementTree as ET
 from infant_eeg.config import MONITOR, SCREEN, NETSTATION_IP, DATA_DIR, CONF_DIR
@@ -143,8 +149,7 @@ class Block:
 
             # Reset movie to beginning
             video_idx=vid_order[t]
-            self.stimuli[video_idx].stim.seek(0)
-            self.stimuli[video_idx].stim.status=0
+            self.stimuli[video_idx].reload(self.win)
 
             # clear any keystrokes before starting
             event.clearEvents()
@@ -198,6 +203,8 @@ class MovieStimulus:
         self.file_name=file_name
         self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name))
 
+    def reload(self, win):
+        self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name))
 
 class DistractorSet:
     """
