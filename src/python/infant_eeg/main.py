@@ -201,10 +201,10 @@ class MovieStimulus:
         self.actor=actor
         self.movement=movement
         self.file_name=file_name
-        self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name))
+        #self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name))
 
     def reload(self, win):
-        self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name))
+        self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name),size=(900,720))
 
 class DistractorSet:
     """
