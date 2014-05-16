@@ -9,7 +9,8 @@ from psychopy import data, gui, event, sound
 from psychopy.visual import Window
 from xml.etree import ElementTree as ET
 from infant_eeg.config import MONITOR, SCREEN, NETSTATION_IP, DATA_DIR, CONF_DIR
-import egi.simple as egi
+#import egi.simple as egi
+import egi.threaded as egi
 import numpy as np
 
 class Experiment:
@@ -310,7 +311,8 @@ if __name__=='__main__':
     ns = egi.Netstation()
     ms_localtime = egi.ms_localtime
     try:
-        ns.connect(NETSTATION_IP, 55513)
+        #ns.connect(NETSTATION_IP, 55513)
+        ns.initialize(NETSTATION_IP, 55513)
         ns.BeginSession()
         ns.sync()
     except:
@@ -324,4 +326,5 @@ if __name__=='__main__':
     # close netstation connection
     if ns:
         ns.EndSession()
-        ns.disconnect()
+        #ns.disconnect()
+        ns.finalize()
