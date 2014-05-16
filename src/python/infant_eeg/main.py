@@ -3,7 +3,7 @@ if sys.platform=='win32':
     import ctypes
     avbin_lib=ctypes.cdll.LoadLibrary('avbin')
     import psychopy.visual
-from psychopy import visual
+from psychopy import visual, core
 import os
 from psychopy import data, gui, event, sound
 from psychopy.visual import Window
@@ -69,8 +69,7 @@ class Experiment:
             if ns is not None:
                 ns.sync()
 
-            if not self.blocks[block_name].run(ns):
-                break
+            self.blocks[block_name].run(ns)
 
     def read_xml(self, file_name):
         root_element=ET.parse(file_name).getroot()
@@ -121,7 +120,12 @@ class Block:
         self.min_iti_frames=min_iti_frames
         self.max_iti_frames=max_iti_frames
         self.stimuli=[]
-    
+
+    def pause(self):
+        event.clearEvents()
+        self.win.flip()
+        event.waitKeys()
+
     def run(self, ns):
         """
         Run the block
@@ -171,9 +175,16 @@ class Block:
             if ns is not None:
                 ns.send_event( 'mov2', label="movie end", timestamp=egi.ms_localtime())
 
-            # Quit block
-            if len(all_keys) and all_keys[0].upper() in ['Q','ESCAPE']:
-                return False
+            if len(all_keys):
+                # Quit task
+                if all_keys[0].upper() in ['Q','ESCAPE']:
+                    core.quit()
+                # Pause block
+                elif all_keys[0].upper()=='P':
+                    self.pause()
+                # End block
+                elif all_keys[0].upper()=='E':
+                    break
 
             # Black screen for delay
             for i in range(delay_frames):
@@ -181,9 +192,8 @@ class Block:
 
         # Stop netstation recording
         if ns is not None:
+            ns.send_event( 'blck', label="block end", timestamp=egi.ms_localtime(), table = {'code' : self.code} )
             ns.StopRecording()
-
-        return True
 
 
 class MovieStimulus:
@@ -201,7 +211,7 @@ class MovieStimulus:
         self.actor=actor
         self.movement=movement
         self.file_name=file_name
-        #self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name))
+        self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name))
 
     def reload(self, win):
         self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name),size=(900,720))
