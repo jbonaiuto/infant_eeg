@@ -1,3 +1,4 @@
+import copy
 import sys
 if sys.platform=='win32':
     import ctypes
@@ -58,7 +59,11 @@ class Experiment:
         ns - netstation connection
         """
         # Create random block order
+        n_repeats=int(self.num_blocks/len(self.blocks.keys()))
         self.block_order=[]
+        for i in range(n_repeats):
+            subblock_order=copy.copy(self.blocks.keys())
+            np.random.shuffle(subblock_order)
         while len(self.block_order)<self.num_blocks:
             self.block_order.extend(self.blocks.keys())
         np.random.shuffle(self.block_order)
@@ -144,7 +149,7 @@ class Block:
 
         # Start netstation recording
         if ns is not None:
-            ns.StartRecording()
+            #ns.StartRecording()
             ns.sync()
             ns.send_event( 'blck', label="block start", timestamp=egi.ms_localtime(), table = {'code' : self.code} )
 
@@ -159,17 +164,19 @@ class Block:
             # clear any keystrokes before starting
             event.clearEvents()
 
-            # Tell netstation the movie is starting
-            if ns is not None:
-                ns.send_event( 'mov1', label="movie start", timestamp=egi.ms_localtime(),
-                    table = {'code' : self.code,
-                             'mvmt': self.stimuli[video_idx].movement,
-                             'actr' : self.stimuli[video_idx].actor} )
-
             # Play movie
+            idx=0
             while not self.stimuli[video_idx].stim.status==visual.FINISHED:
                 self.stimuli[video_idx].stim.draw()
                 self.win.flip()
+                # Tell netstation the movie is starting
+                if idx==0 and ns is not None:
+                    ns.send_event( 'mov1', label="movie start", timestamp=egi.ms_localtime(),
+                        table = {'code' : self.code,
+                                 'mvmt': self.stimuli[video_idx].movement,
+                                 'actr' : self.stimuli[video_idx].actor} )
+                idx+=1
+
             all_keys=event.getKeys()
 
             # Tell netstation the movie has stopped
@@ -194,7 +201,7 @@ class Block:
         # Stop netstation recording
         if ns is not None:
             ns.send_event( 'blck', label="block end", timestamp=egi.ms_localtime(), table = {'code' : self.code} )
-            ns.StopRecording()
+            #ns.StopRecording()
 
 
 class MovieStimulus:
@@ -216,6 +223,7 @@ class MovieStimulus:
 
     def reload(self, win):
         self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name),size=(900,720))
+
 
 class DistractorSet:
     """
