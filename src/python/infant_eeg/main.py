@@ -64,9 +64,7 @@ class Experiment:
         for i in range(n_repeats):
             subblock_order=copy.copy(self.blocks.keys())
             np.random.shuffle(subblock_order)
-        while len(self.block_order)<self.num_blocks:
-            self.block_order.extend(self.blocks.keys())
-        np.random.shuffle(self.block_order)
+            self.block_order.extend(subblock_order)
 
         for block_name in self.block_order:
             self.distractor_set.run()
