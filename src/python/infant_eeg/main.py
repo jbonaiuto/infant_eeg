@@ -184,6 +184,7 @@ class Block:
             if len(all_keys):
                 # Quit task
                 if all_keys[0].upper() in ['Q','ESCAPE']:
+                    self.win.close()
                     core.quit()
                 # Pause block
                 elif all_keys[0].upper()=='P':
