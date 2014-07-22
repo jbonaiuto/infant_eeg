@@ -69,10 +69,6 @@ class Experiment:
         for block_name in self.block_order:
             self.distractor_set.run()
 
-            # Re-synch with netstation in between blocks
-            if ns is not None:
-                ns.sync()
-
             self.blocks[block_name].run(ns)
 
     def read_xml(self, file_name):
@@ -104,6 +100,9 @@ class Experiment:
                 block.stimuli.append(MovieStimulus(self.win, movement, actor, file_name))
             self.blocks[block_name]=block
 
+def sendEvent(ns, code, label, table):
+    if ns is not None:
+        ns.send_event(code, label=label, timestamp=egi.ms_localtime(), table=table)
 
 class Block:
     """
@@ -146,12 +145,13 @@ class Block:
         np.random.shuffle(vid_order)
 
         # Start netstation recording
-        if ns is not None:
-            #ns.StartRecording()
-            ns.sync()
-            ns.send_event( 'blck', label="block start", timestamp=egi.ms_localtime(), table = {'code' : self.code} )
+        sendEvent(ns, 'blck', "block start", {'code' : self.code})
 
         for t in range(self.trials):
+            if ns is not None:
+                #ns.StartRecording()
+                ns.sync()
+
             # Compute random delay period
             delay_frames=self.min_iti_frames+int(np.random.rand()*(self.max_iti_frames-self.min_iti_frames))
 
@@ -163,23 +163,15 @@ class Block:
             event.clearEvents()
 
             # Play movie
-            idx=0
+            self.win.callOnFlip(sendEvent, ns, 'mov1', 'movie start', {'code' : self.code, 'mvmt': self.stimuli[video_idx].movement, 'actr' : self.stimuli[video_idx].actor})
             while not self.stimuli[video_idx].stim.status==visual.FINISHED:
                 self.stimuli[video_idx].stim.draw()
                 self.win.flip()
-                # Tell netstation the movie is starting
-                if idx==0 and ns is not None:
-                    ns.send_event( 'mov1', label="movie start", timestamp=egi.ms_localtime(),
-                        table = {'code' : self.code,
-                                 'mvmt': self.stimuli[video_idx].movement,
-                                 'actr' : self.stimuli[video_idx].actor} )
-                idx+=1
 
             all_keys=event.getKeys()
 
             # Tell netstation the movie has stopped
-            if ns is not None:
-                ns.send_event( 'mov2', label="movie end", timestamp=egi.ms_localtime())
+            sendEvent(ns, 'mov2', 'movie end', {})
 
             if len(all_keys):
                 # Quit task
@@ -198,9 +190,7 @@ class Block:
                 self.win.flip()
 
         # Stop netstation recording
-        if ns is not None:
-            ns.send_event( 'blck', label="block end", timestamp=egi.ms_localtime(), table = {'code' : self.code} )
-            #ns.StopRecording()
+        sendEvent(ns, 'blck', 'block end', {'code' : self.code} )
 
 
 class MovieStimulus:
@@ -319,9 +309,9 @@ if __name__=='__main__':
     ms_localtime = egi.ms_localtime
     try:
         #ns.connect(NETSTATION_IP, 55513)
-        ns.initialize(NETSTATION_IP, 55513)
-        ns.BeginSession()
-        ns.sync()
+            ns.initialize(NETSTATION_IP, 55513)
+            ns.BeginSession()
+            ns.StartRecording()
     except:
         print('Could not connect with NetStation!')
         ns=None
@@ -332,6 +322,7 @@ if __name__=='__main__':
 
     # close netstation connection
     if ns:
+        ns.StopRecording()
         ns.EndSession()
         #ns.disconnect()
         ns.finalize()
