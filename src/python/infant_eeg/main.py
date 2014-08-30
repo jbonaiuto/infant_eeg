@@ -1,5 +1,7 @@
 import copy
 import sys
+from psychopy.iohub.devices.eyetracker.hw import tobii
+
 if sys.platform=='win32':
     import ctypes
     avbin_lib=ctypes.cdll.LoadLibrary('avbin')
@@ -163,7 +165,9 @@ class Block:
             event.clearEvents()
 
             # Play movie
-            self.win.callOnFlip(sendEvent, ns, 'mov1', 'movie start', {'code' : self.code, 'mvmt': self.stimuli[video_idx].movement, 'actr' : self.stimuli[video_idx].actor})
+            self.win.callOnFlip(sendEvent, ns, 'mov1', 'movie start', {'code' : self.code,
+                                                                       'mvmt': self.stimuli[video_idx].movement,
+                                                                       'actr' : self.stimuli[video_idx].actor})
             while not self.stimuli[video_idx].stim.status==visual.FINISHED:
                 self.stimuli[video_idx].stim.draw()
                 self.win.flip()
@@ -315,6 +319,10 @@ if __name__=='__main__':
     except:
         print('Could not connect with NetStation!')
         ns=None
+
+    eyetracker = None
+    tobii.sdk.init()
+    mainloop_thread = tobii.sdk.mainloop.MainloopThread()
 
     # run task
     exp=Experiment(os.path.join(CONF_DIR,'emotion_faces_experiment.xml'))
