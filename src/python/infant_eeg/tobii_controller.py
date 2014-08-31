@@ -307,12 +307,15 @@ class TobiiController:
         else:
             return self.getGazePosition(self.gazeData[-1])
     
-    def setDataFile(self,filename):
+    def setDataFile(self,filename, exp_info):
         print 'set datafile ' + filename
         self.datafile = open(filename,'w')
         self.datafile.write('Recording date:\t'+datetime.datetime.now().strftime('%Y/%m/%d')+'\n')
         self.datafile.write('Recording time:\t'+datetime.datetime.now().strftime('%H:%M:%S')+'\n')
-        self.datafile.write('Recording resolution\t%d x %d\n\n' % tuple(self.win.size))
+        self.datafile.write('Recording resolution\t%d x %d\n' % tuple(self.win.size))
+        for key,data in exp_info.iteritems():
+            self.datafile.write('%s:\t%s\n' % (key,data))
+        self.datafile.write('\n')
         self.datafile.write('\t'.join(['TimeStamp',
                                        'GazePointXLeft',
                                        'GazePointYLeft',

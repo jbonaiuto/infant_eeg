@@ -1,10 +1,10 @@
+import sys
 if sys.platform=='win32':
     import ctypes
     avbin_lib=ctypes.cdll.LoadLibrary('avbin')
     import psychopy.visual
 from psychopy import visual, core
 import copy
-import sys
 import os
 from psychopy import data, gui, event, sound
 from psychopy.visual import Window
@@ -78,7 +78,7 @@ class Experiment:
             eyetracking_logfile=os.path.join(DATA_DIR,'eye_tracking','%s_%s_%s.log' % (self.exp_info['child_id'],
                                                                                        self.exp_info['date'],
                                                                                        self.exp_info['session']))
-            self.eye_tracker.setDataFile(eyetracking_logfile)
+            self.eye_tracker.setDataFile(eyetracking_logfile, self.exp_info)
             self.calibrate_eyetracker()
 
         # Create random block order
