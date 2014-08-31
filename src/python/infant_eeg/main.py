@@ -1,23 +1,20 @@
-import copy
-import sys
-
-from infant_eeg.tobii_controller import TobiiController
-from infant_eeg.util import sendEvent, fixation_within_tolerance
-
-
 if sys.platform=='win32':
     import ctypes
     avbin_lib=ctypes.cdll.LoadLibrary('avbin')
     import psychopy.visual
 from psychopy import visual, core
+import copy
+import sys
 import os
 from psychopy import data, gui, event, sound
 from psychopy.visual import Window
 from xml.etree import ElementTree as ET
-from infant_eeg.config import MONITOR, SCREEN, NETSTATION_IP, DATA_DIR, CONF_DIR, EYETRACKER_NAME, \
-    EYETRACKER_CALIBRATION_POINTS, EYETRACKER_DEBUG
 import egi.threaded as egi
 import numpy as np
+from infant_eeg.tobii_controller import TobiiController
+from infant_eeg.util import sendEvent, fixation_within_tolerance
+from infant_eeg.config import MONITOR, SCREEN, NETSTATION_IP, DATA_DIR, CONF_DIR, EYETRACKER_NAME, \
+    EYETRACKER_CALIBRATION_POINTS, EYETRACKER_DEBUG
 
 class Experiment:
     """
