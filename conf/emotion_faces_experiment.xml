@@ -1,4 +1,4 @@
-<experiment name="emotion_faces" type="block" num_blocks="20" eyetracking="1">
+<experiment name="emotion_faces" type="block" num_blocks="20" eyetracking="0">
     <blocks>
         <block name="joy" num_trials="6" min_iti="800.0" max_iti="1200.0">
             <videos>
