@@ -6,6 +6,7 @@
 #
 
 import datetime
+from psychopy.tools.monitorunittools import pix2deg
 
 import tobii.sdk.mainloop
 import tobii.sdk.time.clock
@@ -32,7 +33,8 @@ class TobiiController:
         tobii.sdk.init()
         self.clock = tobii.sdk.time.clock.Clock()
         self.mainloop_thread = tobii.sdk.mainloop.MainloopThread()
-        self.browser = tobii.sdk.browsing.EyetrackerBrowser(self.mainloop_thread, lambda t, n, i: self.on_eyetracker_browser_event(t, n, i))
+        self.browser = tobii.sdk.browsing.EyetrackerBrowser(self.mainloop_thread,
+                                                            lambda t, n, i: self.on_eyetracker_browser_event(t, n, i))
         self.mainloop_thread.start()
         
     def waitForFindEyeTracker(self):
@@ -68,7 +70,9 @@ class TobiiController:
         print "Connecting to:", eyetracker_info
         tobii.sdk.eyetracker.Eyetracker.create_async(self.mainloop_thread,
                                                      eyetracker_info,
-                                                     lambda error, eyetracker: self.on_eyetracker_created(error, eyetracker, eyetracker_info))
+                                                     lambda error, eyetracker: self.on_eyetracker_created(error,
+                                                                                                          eyetracker,
+                                                                                                          eyetracker_info))
         
         while self.eyetracker is None:
             pass
@@ -99,13 +103,15 @@ class TobiiController:
         img = Image.new('RGB',self.win.size)
         draw = ImageDraw.Draw(img)
         
-        self.calin = psychopy.visual.Circle(self.win,radius=2,fillColor=(0.0,0.0,0.0))
-        self.calout = psychopy.visual.Circle(self.win,radius=64,lineColor=(0.0,1.0,0.0))
+        self.calin = psychopy.visual.Circle(self.win,radius=pix2deg(2,self.win.monitor),fillColor=(0.0,0.0,0.0))
+        self.calout = psychopy.visual.Circle(self.win,radius=pix2deg(64,self.win.monitor),fillColor=(0.0,1.0,0.0),
+                                             lineColor=(0.0,1.0,0.0))
         self.calresult = psychopy.visual.SimpleImageStim(self.win,img)
-        self.calresultmsg = psychopy.visual.TextStim(self.win,pos=(0,-self.win.size[1]/4))
-        
+        self.calresultmsg = psychopy.visual.TextStim(self.win,pos=(pix2deg(0,self.win.monitor),
+                                                                   pix2deg(-self.win.size[1]/4,self.win.monitor)))
+        self.calresultmsg.setText('Start calibration:SPACE')
         self.initcalibration_completed = False
-        print "StartCalibration"
+        print "Init calibration"
         self.eyetracker.StartCalibration(lambda error, r: self.on_calib_start(error, r))
         while not self.initcalibration_completed:
             pass
@@ -117,19 +123,26 @@ class TobiiController:
                     waitkey = False
             self.calout.draw()
             self.calin.draw()
+            self.calresultmsg.draw()
             self.win.flip()
         
         clock = psychopy.core.Clock()
+        last_pos=Point2D(x=0.5,y=0.5)
         for self.point_index in range(len(self.points)):
             p = Point2D()
             p.x, p.y = self.points[self.point_index]
-            self.calin.setPos(((p.x-0.5)*self.win.size[0],(0.5-p.y)*self.win.size[1]))
-            self.calout.setPos(((p.x-0.5)*self.win.size[0],(0.5-p.y)*self.win.size[1]))
-            
             clock.reset()
             currentTime = clock.getTime()
-            while currentTime < 1.5:
-                self.calout.setRadius(40*(1.5- currentTime)+4)
+            while currentTime <= 1.5:
+                rel_pos=Point2D()
+                rel_pos.x=last_pos.x+((currentTime/1.5)*(p.x-last_pos.x))
+                rel_pos.y=last_pos.y+((currentTime/1.5)*(p.y-last_pos.y))
+                self.calin.setPos((pix2deg((rel_pos.x-0.5)*self.win.size[0],self.win.monitor),
+                               pix2deg((0.5-rel_pos.y)*self.win.size[1],self.win.monitor)))
+                self.calout.setPos((pix2deg((rel_pos.x-0.5)*self.win.size[0],self.win.monitor),
+                                    pix2deg((0.5-rel_pos.y)*self.win.size[1],self.win.monitor)))
+
+                self.calout.setRadius(pix2deg(40*(1.5- currentTime)+4,self.win.monitor))
                 psychopy.event.getKeys()
                 self.calout.draw()
                 self.calin.draw()
@@ -142,6 +155,7 @@ class TobiiController:
                 self.calout.draw()
                 self.calin.draw()
                 self.win.flip()
+            last_pos=Point2D(x=p.x,y=p.y)
          
         self.computeCalibration_completed = False
         self.computeCalibration_succeeded = False
@@ -171,20 +185,24 @@ class TobiiController:
                 points[data.true_point] = {'left':data.left, 'right':data.right}
             
             if len(points) == 0:
-                self.calresultmsg.setText('No ture calibration data (Retry:r/Abort:ESC)')
+                self.calresultmsg.setText('No true calibration data (Retry:r/Abort:ESC)')
             
             else:
                 for p,d in points.iteritems():
-                    if d['left'].status == 1:
-                        draw.line(((p.x*self.win.size[0],p.y*self.win.size[1]),
+                    if d['left'].validity == 1:
+                        draw.line(((p.x*self.win.size[0],
+                                    p.y*self.win.size[1]),
                                    (d['left'].map_point.x*self.win.size[0],
                                     d['left'].map_point.y*self.win.size[1])),fill=(255,0,0))
-                    if d['right'].status == 1:
-                        draw.line(((p.x*self.win.size[0],p.y*self.win.size[1]),
+                    if d['right'].validity == 1:
+                        draw.line(((p.x*self.win.size[0],
+                                    p.y*self.win.size[1]),
                                    (d['right'].map_point.x*self.win.size[0],
                                     d['right'].map_point.y*self.win.size[1])),fill=(0,255,0))
-                    draw.ellipse(((p.x*self.win.size[0]-10,p.y*self.win.size[1]-10),
-                                  (p.x*self.win.size[0]+10,p.y*self.win.size[1]+10)),
+                    draw.ellipse(((p.x*self.win.size[0]-10,
+                                   p.y*self.win.size[1]-10),
+                                  (p.x*self.win.size[0]+10,
+                                   p.y*self.win.size[1]+10)),
                                  outline=(0,0,0))
                 self.calresultmsg.setText('Accept calibration results (Accept:a/Retry:r/Abort:ESC)')
                 
@@ -231,7 +249,7 @@ class TobiiController:
             self.computeCalibration_succeeded = False
         elif error != 0:
             print "CalibCompute failed because of a server error:", error
-            print "Could not compute calibration because of a server error.\n\n<b>Details:</b>\n<i>%s</i>" % (error)
+            print "Could not compute calibration because of a server error.\n\n<b>Details:</b>\n<i>%s</i>" % error
             self.computeCalibration_succeeded = False
         else:
             print ""
@@ -278,10 +296,10 @@ class TobiiController:
         self.gazeData.append(gaze)
     
     def getGazePosition(self,gaze):
-        return ((gaze.LeftGazePoint2D.x-0.5)*self.win.size[0],
-                (0.5-gaze.LeftGazePoint2D.y)*self.win.size[1],
-                (gaze.RightGazePoint2D.x-0.5)*self.win.size[0],
-                (0.5-gaze.RightGazePoint2D.y)*self.win.size[1])
+        return ((pix2deg((gaze.LeftGazePoint2D.x-0.5)*self.win.size[0],self.win.monitor),
+                pix2deg((0.5-gaze.LeftGazePoint2D.y)*self.win.size[1],self.win.monitor),
+                pix2deg((gaze.RightGazePoint2D.x-0.5)*self.win.size[0],self.win.monitor),
+                pix2deg((0.5-gaze.RightGazePoint2D.y)*self.win.size[1],self.win.monitor)))
     
     def getCurrentGazePosition(self):
         if len(self.gazeData)==0:
@@ -295,10 +313,20 @@ class TobiiController:
         self.datafile.write('Recording date:\t'+datetime.datetime.now().strftime('%Y/%m/%d')+'\n')
         self.datafile.write('Recording time:\t'+datetime.datetime.now().strftime('%H:%M:%S')+'\n')
         self.datafile.write('Recording resolution\t%d x %d\n\n' % tuple(self.win.size))
-        
+        self.datafile.write('\t'.join(['TimeStamp',
+                                       'GazePointXLeft',
+                                       'GazePointYLeft',
+                                       'ValidityLeft',
+                                       'GazePointXRight',
+                                       'GazePointYRight',
+                                       'ValidityRight',
+                                       'GazePointX',
+                                       'GazePointY',
+                                       'Event'])+'\n')
+
     def closeDataFile(self):
         print 'datafile closed'
-        if self.datafile != None:
+        if self.datafile is not None:
             self.flushData()
             self.datafile.close()
         
@@ -315,17 +343,7 @@ class TobiiController:
         
         if len(self.gazeData)==0:
             return
-        
-        self.datafile.write('\t'.join(['TimeStamp',
-                                       'GazePointXLeft',
-                                       'GazePointYLeft',
-                                       'ValidityLeft',
-                                       'GazePointXRight',
-                                       'GazePointYRight',
-                                       'ValidityRight',
-                                       'GazePointX',
-                                       'GazePointY',
-                                       'Event'])+'\n')
+
         timeStampStart = self.gazeData[0].Timestamp
         for g in self.gazeData:
             self.datafile.write('%.1f\t%.4f\t%.4f\t%d\t%.4f\t%.4f\t%d'%(
@@ -343,14 +361,17 @@ class TobiiController:
             elif g.RightValidity == 4:
                 ave = (g.LeftGazePoint2D.x,g.LeftGazePoint2D.y)
             else:
-                ave = (g.LeftGazePoint2D.x+g.RightGazePoint2D.x,
-                       g.LeftGazePoint2D.y+g.RightGazePoint2D.y)
+                ave = (.5*(g.LeftGazePoint2D.x+g.RightGazePoint2D.x)*self.win.size[0],
+                       .5*(g.LeftGazePoint2D.y+g.RightGazePoint2D.y)*self.win.size[1])
                 
             self.datafile.write('\t%.4f\t%.4f\t'%ave)
             self.datafile.write('\n')
-        
+
         formatstr = '%.1f'+'\t'*9+'%s\n'
         for e in self.eventData:
             self.datafile.write(formatstr % ((e[0]-timeStampStart)/1000.0,e[1]))
-        
+
+        self.gazeData = []
+        self.eventData = []
+
         self.datafile.flush()
