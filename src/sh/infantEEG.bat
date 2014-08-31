@@ -1,6 +1,12 @@
 @ECHO OFF
-SET PYTHONPATH=D:\Sources\Python\broadmonkController\src\python
+
+SET PYTHONPATH=C:\Users\EEGlabUser\Desktop\Holly\infant_eeg\src\python
+
 SET PYGLET_SHADOW_WINDOW=0
-D:
-cd \Sources\Python\broadmonkController\src\python
-python broadmonkController\main.py
+
+C:
+
+cd \Users\EEGlabUser\Desktop\Holly\infant_eeg\src\python
+
+
+python infant_eeg\main.py
