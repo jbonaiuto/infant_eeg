@@ -162,7 +162,9 @@ class Block:
             event.clearEvents()
 
             # Play movie
-            self.win.callOnFlip(sendEvent, ns, 'mov1', 'movie start', {'code' : self.code, 'mvmt': self.stimuli[video_idx].movement, 'actr' : self.stimuli[video_idx].actor})
+            self.win.callOnFlip(sendEvent, ns, 'mov1', 'movie start', {'code' : self.code,
+                                                                       'mvmt': self.stimuli[video_idx].movement,
+                                                                       'actr' : self.stimuli[video_idx].actor})
             while not self.stimuli[video_idx].stim.status==visual.FINISHED:
                 self.stimuli[video_idx].stim.draw()
                 self.win.flip()
