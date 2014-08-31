@@ -1,6 +1,6 @@
 @ECHO OFF
 
-SET PYTHONPATH=C:\Users\EEGlabUser\Desktop\Holly\infant_eeg\src\python
+SET PYTHONPATH=%PYTHONPATH%;C:\Users\EEGlabUser\Desktop\Holly\infant_eeg\src\python
 
 SET PYGLET_SHADOW_WINDOW=0
 
