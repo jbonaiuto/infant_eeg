@@ -15,7 +15,11 @@ dist/
 eggs/
 lib/
 lib64/
-data
+data/distractor_videos
+data/eye_tracking
+data/images/distractors
+data/movies
+data/sounds
 parts/
 sdist/
 var/
