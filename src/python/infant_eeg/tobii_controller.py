@@ -6,6 +6,8 @@
 #
 
 import datetime
+import os
+from math import degrees, atan2
 from psychopy.tools.monitorunittools import pix2deg
 
 import tobii.sdk.mainloop
@@ -20,6 +22,8 @@ import psychopy.event
 import Image
 import ImageDraw
 from tobii.sdk.types import Point2D
+from infant_eeg.config import DATA_DIR
+
 
 class TobiiController:
     def __init__(self, win):
@@ -102,10 +106,8 @@ class TobiiController:
         
         img = Image.new('RGB',self.win.size)
         draw = ImageDraw.Draw(img)
-        
-        self.calin = psychopy.visual.Circle(self.win,radius=pix2deg(2,self.win.monitor),fillColor=(0.0,0.0,0.0))
-        self.calout = psychopy.visual.Circle(self.win,radius=pix2deg(64,self.win.monitor),fillColor=(0.0,1.0,0.0),
-                                             lineColor=(0.0,1.0,0.0))
+
+        self.rocket_img=psychopy.visual.ImageStim(self.win, os.path.join(DATA_DIR,'images','rocket.png'))
         self.calresult = psychopy.visual.SimpleImageStim(self.win,img)
         self.calresultmsg = psychopy.visual.TextStim(self.win,pos=(pix2deg(0,self.win.monitor),
                                                                    pix2deg(-self.win.size[1]/4,self.win.monitor)))
@@ -121,8 +123,7 @@ class TobiiController:
             for key in psychopy.event.getKeys():
                 if key=='space':
                     waitkey = False
-            self.calout.draw()
-            self.calin.draw()
+            self.rocket_img.draw()
             self.calresultmsg.draw()
             self.win.flip()
         
@@ -133,27 +134,27 @@ class TobiiController:
             p.x, p.y = self.points[self.point_index]
             clock.reset()
             currentTime = clock.getTime()
+            x_diff=p.x-last_pos.x
+            y_diff=p.y-last_pos.y
+            angle=degrees(atan2(y_diff,x_diff))+90
+            self.rocket_img.setOri(angle)
             while currentTime <= 1.5:
                 rel_pos=Point2D()
                 rel_pos.x=last_pos.x+((currentTime/1.5)*(p.x-last_pos.x))
                 rel_pos.y=last_pos.y+((currentTime/1.5)*(p.y-last_pos.y))
-                self.calin.setPos((pix2deg((rel_pos.x-0.5)*self.win.size[0],self.win.monitor),
-                               pix2deg((0.5-rel_pos.y)*self.win.size[1],self.win.monitor)))
-                self.calout.setPos((pix2deg((rel_pos.x-0.5)*self.win.size[0],self.win.monitor),
+                self.rocket_img.setPos((pix2deg((rel_pos.x-0.5)*self.win.size[0],self.win.monitor),
                                     pix2deg((0.5-rel_pos.y)*self.win.size[1],self.win.monitor)))
-
-                self.calout.setRadius(pix2deg(40*(1.5- currentTime)+4,self.win.monitor))
+                self.rocket_img.setSize((pix2deg(110.67*(1.5- currentTime)+4,self.win.monitor),
+                                         pix2deg(196*(1.5 - currentTime)+4,self.win.monitor)))
                 psychopy.event.getKeys()
-                self.calout.draw()
-                self.calin.draw()
+                self.rocket_img.draw()
                 self.win.flip()
                 currentTime = clock.getTime()
             self.add_point_completed = False
             self.eyetracker.AddCalibrationPoint(p, lambda error, r: self.on_add_completed(error, r))
             while not self.add_point_completed:
                 psychopy.event.getKeys()
-                self.calout.draw()
-                self.calin.draw()
+                self.rocket_img.draw()
                 self.win.flip()
             last_pos=Point2D(x=p.x,y=p.y)
          
