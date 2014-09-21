@@ -112,12 +112,19 @@ class TobiiController:
         self.calresultmsg = psychopy.visual.TextStim(self.win,pos=(pix2deg(0,self.win.monitor),
                                                                    pix2deg(-self.win.size[1]/4,self.win.monitor)))
         self.calresultmsg.setText('Start calibration:SPACE')
-        self.initcalibration_completed = False
-        print "Init calibration"
-        self.eyetracker.StartCalibration(lambda error, r: self.on_calib_start(error, r))
-        while not self.initcalibration_completed:
-            pass
-			
+
+        self.left_eye_status=psychopy.visual.Circle(self.win, radius=pix2deg(40,self.win.monitor),
+                                                    pos=(pix2deg(-50,self.win.monitor),
+                                                         pix2deg(-self.win.size[1]/3,self.win.monitor)))
+        self.right_eye_status=psychopy.visual.Circle(self.win, radius=pix2deg(40,self.win.monitor),
+                                                    pos=(pix2deg(50,self.win.monitor),
+                                                         pix2deg(-self.win.size[1]/3,self.win.monitor)))
+
+        self.gazeData = []
+        self.eventData = []
+        self.eyetracker.events.OnGazeDataReceived += self.on_gazedata
+        self.eyetracker.StartTracking()
+
         waitkey = True
         while waitkey:
             for key in psychopy.event.getKeys():
@@ -125,8 +132,27 @@ class TobiiController:
                     waitkey = False
             self.rocket_img.draw()
             self.calresultmsg.draw()
+            self.left_eye_status.fillColor='red'
+            self.right_eye_status.fillColor='red'
+            if len(self.gazeData):
+                if self.gazeData[-1].LeftValidity!=4:
+                    self.left_eye_status.fillColor='green'
+                if self.gazeData[-1].RightValidity!=4:
+                    self.right_eye_status.fillColor='green'
+            self.left_eye_status.draw()
+            self.right_eye_status.draw()
             self.win.flip()
-        
+        self.eyetracker.StopTracking()
+        self.eyetracker.events.OnGazeDataReceived -= self.on_gazedata
+        self.gazeData = []
+        self.eventData = []
+
+        self.initcalibration_completed = False
+        print "Init calibration"
+        self.eyetracker.StartCalibration(lambda error, r: self.on_calib_start(error, r))
+        while not self.initcalibration_completed:
+            pass
+
         clock = psychopy.core.Clock()
         last_pos=Point2D(x=0.5,y=0.5)
         for self.point_index in range(len(self.points)):
