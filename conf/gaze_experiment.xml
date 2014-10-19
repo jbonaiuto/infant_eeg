@@ -1,0 +1,8 @@
+<experiment name="gaze_following" type="block" num_blocks="0" eyetracking="0">
+    <preferential_gaze duration="3000.0">
+        <actor name="CG" file_name='CG.png'/>
+        <actor name="FO" file_name="FO.png"/>
+    </preferential_gaze>
+    <blocks>
+    </blocks>
+</experiment>
