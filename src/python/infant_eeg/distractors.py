@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from psychopy import __all__
+from psychopy import visual, sound, event
 
 __author__ = 'jbonaiuto'
 
