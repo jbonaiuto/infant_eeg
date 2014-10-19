@@ -110,6 +110,7 @@ class Experiment:
         if self.eye_tracker is not None:
             self.eye_tracker.stopTracking()
             self.eye_tracker.closeDataFile()
+            self.eye_tracker.destroy()
 
         self.win.close()
         core.quit()

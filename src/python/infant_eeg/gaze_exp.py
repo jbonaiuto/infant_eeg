@@ -96,7 +96,7 @@ class Experiment:
         if self.eye_tracker is not None:
             self.eye_tracker.startTracking()
 
-        self.preferential_gaze.run()
+        self.preferential_gaze.run(ns, self.eye_tracker)
 
         for block_name in self.block_order:
             if self.distractor_set.run() and self.eye_tracker is not None:
@@ -110,11 +110,12 @@ class Experiment:
             if self.eye_tracker is not None:
                 self.eye_tracker.flushData()
 
-        self.preferential_gaze.run()
+        self.preferential_gaze.run(ns, self.eye_tracker)
 
         if self.eye_tracker is not None:
             self.eye_tracker.stopTracking()
             self.eye_tracker.closeDataFile()
+            self.eye_tracker.destroy()
 
         self.win.close()
         core.quit()
@@ -395,10 +396,10 @@ class PreferentialGaze:
         self.win = win
         self.actors = actors
         self.duration_frames = duration_frames
-        self.ran = False
+        self.run_idx = 1
 
-    def run(self):
-        if not self.ran:
+    def run(self, ns, eyetracker):
+        if self.run_idx==1:
             if np.random.rand() < 0.5:
                 self.actors[0].stim.pos = [-10, 0]
                 self.actors[1].stim.pos = [10, 0]
@@ -408,12 +409,13 @@ class PreferentialGaze:
         else:
             self.actors[0].stim.pos = [-1 * self.actors[0].stim.pos[0], 0]
             self.actors[1].stim.pos = [-1 * self.actors[1].stim.pos[0], 0]
-        # Black screen for delay
+        self.win.callOnFlip(sendEvent, ns, eyetracker, 'pgs%d' % self.run_idx, 'pg start', {})
         for i in range(self.duration_frames):
             for actor in self.actors:
                 actor.stim.draw()
             self.win.flip()
-        self.ran = True
+        sendEvent(ns, eyetracker, 'pge%d' % self.run_idx, "pg end", {})
+        self.run_idx+=1
 
 
 if __name__ == '__main__':
@@ -431,7 +433,7 @@ if __name__ == '__main__':
     # present a dialogue to change params
     dlg = gui.DlgFromDict(
         expInfo,
-        title='Faces',
+        title='Gaze',
         fixed=['dateStr']
     )
 
@@ -450,8 +452,3 @@ if __name__ == '__main__':
     exp = Experiment(expInfo, os.path.join(CONF_DIR, 'gaze_experiment.xml'))
     exp.run(ns)
 
-    # close netstation connection
-    if ns:
-        ns.StopRecording()
-        ns.EndSession()
-        ns.finalize()
