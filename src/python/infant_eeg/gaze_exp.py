@@ -4,6 +4,7 @@ from psychopy import data, gui, visual, event, core
 import psychopy
 from psychopy.visual import Window
 from xml.etree import ElementTree as ET
+import sys
 import egi.threaded as egi
 from infant_eeg.config import NETSTATION_IP, CONF_DIR, DATA_DIR, MONITOR, SCREEN, EYETRACKER_CALIBRATION_POINTS, \
     EYETRACKER_NAME, \
@@ -115,10 +116,20 @@ class Experiment:
         if self.eye_tracker is not None:
             self.eye_tracker.stopTracking()
             self.eye_tracker.closeDataFile()
-            self.eye_tracker.destroy()
+            #self.eye_tracker.destroy()
+
+        # close netstation connection
+        if ns:
+            ns.StopRecording()
+            ns.EndSession()
+            ns.finalize()
 
         self.win.close()
         core.quit()
+        if self.eye_tracker is not None:
+            self.eye_tracker.destroy()
+
+
 
     def read_xml(self, file_name):
         root_element = ET.parse(file_name).getroot()
@@ -451,4 +462,3 @@ if __name__ == '__main__':
     # run task
     exp = Experiment(expInfo, os.path.join(CONF_DIR, 'gaze_experiment.xml'))
     exp.run(ns)
-
