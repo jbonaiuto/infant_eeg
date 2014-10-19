@@ -1,8 +1,20 @@
-<experiment name="gaze_following" type="block" num_blocks="0" eyetracking="0">
+<experiment name="gaze_following" type="block" num_blocks="1" eyetracking="0">
     <preferential_gaze duration="3000.0">
         <actor name="CG" file_name='CG.png'/>
         <actor name="FO" file_name="FO.png"/>
     </preferential_gaze>
     <blocks>
+        <block name="gaze" num_trials="10" init_stim="500.0" min_iti="800.0" max_iti="1200.0">
+            <videos>
+                <video direction="left" actor="CG" file_name="CG_left.mpg"/>
+                <video direction="right" actor="CG" file_name="CG_right.mpg"/>
+                <video direction="left" actor="FO" file_name="FO_left.mpg"/>
+                <video direction="right" actor="FO" file_name="FO_right.mpg"/>
+            </videos>
+            <images>
+                <image file_name="distractors/space/alien3.jpg"/>
+                <image file_name="distractors/space/alien4.jpg"/>
+            </images>
+        </block>
     </blocks>
 </experiment>

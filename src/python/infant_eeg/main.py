@@ -1,4 +1,6 @@
 import sys
+from infant_eeg.stim import MovieStimulus
+
 if sys.platform=='win32':
     import ctypes
     avbin_lib=ctypes.cdll.LoadLibrary('avbin')
@@ -7,7 +9,7 @@ from infant_eeg.distractors import DistractorSet
 from psychopy import visual, core
 import copy
 import os
-from psychopy import data, gui, event, sound
+from psychopy import data, gui, event
 from psychopy.visual import Window
 from xml.etree import ElementTree as ET
 import egi.threaded as egi
@@ -248,26 +250,6 @@ class Block:
         # Stop netstation recording
         sendEvent(ns, eyetracker, 'blk2', 'block end', {'code' : self.code} )
         return True
-
-class MovieStimulus:
-    """
-    A movie stimulus
-    """
-
-    def __init__(self, win, movement, actor, file_name):
-        """
-        win - window to show movie in
-        movement - movement being made in movie
-        actor - ID of actor
-        file_name - file containing movie
-        """
-        self.actor=actor
-        self.movement=movement
-        self.file_name=file_name
-        self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name),size=(900,720))
-
-    def reload(self, win):
-        self.stim=visual.MovieStim(win, os.path.join(DATA_DIR,'movies',self.file_name),size=(900,720))
 
 
 if __name__=='__main__':
