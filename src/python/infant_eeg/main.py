@@ -78,9 +78,9 @@ class Experiment:
         """
         # Calibrate eyetracker
         if self.eye_tracker is not None:
-            eyetracking_logfile=os.path.join(DATA_DIR,'eye_tracking','%s_%s_%s.log' % (self.exp_info['child_id'],
-                                                                                       self.exp_info['date'],
-                                                                                       self.exp_info['session']))
+            eyetracking_logfile=os.path.join(DATA_DIR,'logs','%s_%s_%s.log' % (self.exp_info['child_id'],
+                                                                               self.exp_info['date'],
+                                                                               self.exp_info['session']))
             self.eye_tracker.setDataFile(eyetracking_logfile, self.exp_info)
             self.calibrate_eyetracker()
 
