@@ -2,8 +2,8 @@ import copy
 import os
 from psychopy import data, gui, visual, event, core
 from psychopy.visual import Window
-from twisted.python._epoll import ET
-import egi
+from xml.etree import ElementTree as ET
+import egi.threaded as egi
 from infant_eeg.config import NETSTATION_IP, CONF_DIR, DATA_DIR, MONITOR, SCREEN, EYETRACKER_CALIBRATION_POINTS, EYETRACKER_NAME
 from infant_eeg.distractors import DistractorSet
 import numpy as np
@@ -76,29 +76,29 @@ class Experiment:
             self.calibrate_eyetracker()
 
         # Create random block order
-        n_repeats=int(self.num_blocks/len(self.blocks.keys()))
-        self.block_order=[]
-        for i in range(n_repeats):
-            subblock_order=copy.copy(self.blocks.keys())
-            np.random.shuffle(subblock_order)
-            self.block_order.extend(subblock_order)
+        # n_repeats=int(self.num_blocks/len(self.blocks.keys()))
+        # self.block_order=[]
+        # for i in range(n_repeats):
+        #     subblock_order=copy.copy(self.blocks.keys())
+        #     np.random.shuffle(subblock_order)
+        #     self.block_order.extend(subblock_order)
 
         if self.eye_tracker is not None:
             self.eye_tracker.startTracking()
 
         self.preferential_gaze.run()
 
-        for block_name in self.block_order:
-            if self.distractor_set.run() and self.eye_tracker is not None:#
-                self.eye_tracker.stopTracking()
-                self.calibrate_eyetracker()
-                self.eye_tracker.startTracking()
-
-            if not self.blocks[block_name].run(ns, self.eye_tracker):
-                break
-
-            if self.eye_tracker is not None:
-                self.eye_tracker.flushData()
+        # for block_name in self.block_order:
+        #     if self.distractor_set.run() and self.eye_tracker is not None:#
+        #         self.eye_tracker.stopTracking()
+        #         self.calibrate_eyetracker()
+        #         self.eye_tracker.startTracking()
+        #
+        #     if not self.blocks[block_name].run(ns, self.eye_tracker):
+        #         break
+        #
+        #     if self.eye_tracker is not None:
+        #         self.eye_tracker.flushData()
 
         if self.eye_tracker is not None:
             self.eye_tracker.stopTracking()
@@ -126,7 +126,7 @@ class Experiment:
             actor_name=actor_node.attrib['name']
             filename=actor_node.attrib['file_name']
             actor_images.append(ActorImage(self.win, actor_name, filename))
-        self.preferential_gaze=PreferentialGaze(actor_images, int(preferential_gaze_duration/self.mean_ms_per_frame))
+        self.preferential_gaze=PreferentialGaze(self.win, actor_images, int(preferential_gaze_duration/self.mean_ms_per_frame))
 
         blocks_node=root_element.find('blocks')
         block_nodes=blocks_node.findall('block')
@@ -162,7 +162,8 @@ class ActorImage:
 
 class PreferentialGaze:
 
-    def __init__(self, actors, duration_frames):
+    def __init__(self, win, actors, duration_frames):
+        self.win=win
         self.actors=actors
         self.duration_frames=duration_frames
 
@@ -176,7 +177,7 @@ class PreferentialGaze:
         # Black screen for delay
         for i in range(self.duration_frames):
             for actor in self.actors:
-                self.actor.stim.draw()
+                actor.stim.draw()
             self.win.flip()
 
 if __name__=='__main__':
