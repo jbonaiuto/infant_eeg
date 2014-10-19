@@ -1,20 +1,27 @@
-<experiment name="gaze_following" type="block" num_blocks="1" eyetracking="0">
+<experiment name="gaze_following" type="block" num_blocks="1" eyetracking="1">
     <preferential_gaze duration="3000.0">
         <actor name="CG" file_name='CG.png'/>
         <actor name="FO" file_name="FO.png"/>
     </preferential_gaze>
+
     <blocks>
-        <block name="gaze" num_trials="10" init_stim="500.0" min_iti="800.0" max_iti="1200.0">
+        <block name="gaze" num_trials="16" init_stim="500.0" min_iti="800.0" max_iti="1200.0">
             <videos>
-                <video direction="left" actor="CG" file_name="CG_left.mpg"/>
-                <video direction="right" actor="CG" file_name="CG_right.mpg"/>
-                <video direction="left" actor="FO" file_name="FO_left.mpg"/>
-                <video direction="right" actor="FO" file_name="FO_right.mpg"/>
+                <video direction="l" actor="CG" file_name="CG-left.mpg" init_frame="CG-left.png"/>
+                <video direction="r" actor="CG" file_name="CG-right.mpg" init_frame="CG-right.png"/>
+                <video direction="l" actor="FO" file_name="FO-left.mpg" init_frame="FO-left.png"/>
+                <video direction="r" actor="FO" file_name="FO-right.mpg" init_frame="FO-right.png"/>
             </videos>
-            <images>
-                <image file_name="distractors/space/alien3.jpg"/>
-                <image file_name="distractors/space/alien4.jpg"/>
-            </images>
+            <trials>
+                <trial code="l_c" left_image="distractors/space/alien3.jpg" right_image="distractors/space/alien4.jpg" attention="l" gaze="cong"/>
+                <trial code="l_i" left_image="distractors/space/alien3.jpg" right_image="distractors/space/alien4.jpg" attention="l" gaze="inco"/>
+                <trial code="r_c" left_image="distractors/space/alien3.jpg" right_image="distractors/space/alien4.jpg" attention="r" gaze="cong"/>
+                <trial code="r_i" left_image="distractors/space/alien3.jpg" right_image="distractors/space/alien4.jpg" attention="r" gaze="inco"/>
+                <trial code="l_c" left_image="distractors/space/alien4.jpg" right_image="distractors/space/alien3.jpg" attention="l" gaze="cong"/>
+                <trial code="l_i" left_image="distractors/space/alien4.jpg" right_image="distractors/space/alien3.jpg" attention="l" gaze="inco"/>
+                <trial code="r_c" left_image="distractors/space/alien4.jpg" right_image="distractors/space/alien3.jpg" attention="r" gaze="cong"/>
+                <trial code="r_i" left_image="distractors/space/alien4.jpg" right_image="distractors/space/alien3.jpg" attention="r" gaze="inco"/>
+            </trials>
         </block>
     </blocks>
 </experiment>
