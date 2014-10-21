@@ -68,6 +68,7 @@ class Experiment:
             retval = self.eye_tracker.doCalibration(EYETRACKER_CALIBRATION_POINTS)
         if retval == 'abort':
             self.eye_tracker.closeDataFile()
+            self.eye_tracker.destroy()
             self.win.close()
             core.quit()
 
@@ -110,7 +111,13 @@ class Experiment:
         if self.eye_tracker is not None:
             self.eye_tracker.stopTracking()
             self.eye_tracker.closeDataFile()
-            self.eye_tracker.destroy()
+            #self.eye_tracker.destroy()
+
+        # close netstation connection
+        if ns:
+            ns.StopRecording()
+            ns.EndSession()
+            ns.finalize()
 
         self.win.close()
         core.quit()
@@ -287,8 +294,3 @@ if __name__=='__main__':
     exp=Experiment(expInfo,os.path.join(CONF_DIR,'emotion_faces_experiment.xml'))
     exp.run(ns)
 
-    # close netstation connection
-    if ns:
-        ns.StopRecording()
-        ns.EndSession()
-        ns.finalize()
