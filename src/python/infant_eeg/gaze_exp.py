@@ -156,11 +156,13 @@ class Experiment:
             block_name = block_node.attrib['name']
             num_trials = int(block_node.attrib['num_trials'])
             init_stim_ms = float(block_node.attrib['init_stim'])
+            min_attending_ms = float(block_node.attrib['min_attending'])
             min_iti_ms = float(block_node.attrib['min_iti'])
             max_iti_ms = float(block_node.attrib['max_iti'])
 
             # Compute delay in frames based on frame rate
             init_stim_frames = int(init_stim_ms / self.mean_ms_per_frame)
+            min_attending_frames = int(min_attending_ms / self.mean_ms_per_frame)
             min_iti_frames = int(min_iti_ms / self.mean_ms_per_frame)
             max_iti_frames = int(max_iti_ms / self.mean_ms_per_frame)
 
@@ -193,7 +195,7 @@ class Experiment:
                     actor = self.congruent_actor
                 else:
                     actor = self.incongruent_actor
-                trial = Trial(self.win, code, init_stim_frames, left_image, right_image, attention, gaze, actor)
+                trial = Trial(self.win, code, init_stim_frames, min_attending_frames, left_image, right_image, attention, gaze, actor)
                 if trial.gaze == 'cong':
                     trial.init_frame = block.video_init_frames[self.congruent_actor][trial.attention]
                     trial.video_stim = block.videos[self.congruent_actor][trial.attention]
@@ -209,10 +211,11 @@ class Experiment:
 
 
 class Trial:
-    def __init__(self, win, code, init_stim_frames, left_image, right_image, attention, gaze, actor):
+    def __init__(self, win, code, init_stim_frames, min_attending_frames, left_image, right_image, attention, gaze, actor):
         self.win = win
         self.code = code
         self.init_stim_frames = init_stim_frames
+        self.min_attending_frames = min_attending_frames
         self.images = {}
         self.images['l'] = visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images', left_image))
         self.images['l'].pos = [-20, 0]
@@ -252,7 +255,7 @@ class Trial:
                              'attn': self.attention,
                              'gaze': self.gaze,
                              'actr': self.actor})
-        while attending_frames < 20:
+        while attending_frames < self.min_attending_frames:
             if eyetracker is not None and EYETRACKER_DEBUG:
                 gaze_position = eyetracker.getCurrentGazePosition()
                 if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
@@ -274,7 +277,7 @@ class Trial:
                 self.win.flip()
                 idx += 1
 
-        if attending_frames >= 20:
+        if attending_frames >= self.min_attending_frames:
             self.win.callOnFlip(sendEvent, ns, eyetracker, 'mov1', 'movie start',
                             {'code': self.code,
                              'attn': self.attention,
