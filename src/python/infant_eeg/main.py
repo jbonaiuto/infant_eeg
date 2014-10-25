@@ -205,7 +205,7 @@ class Block:
                 ns.sync()
 
             # Compute random delay period
-            delay_frames=self.min_iti_frames+int(np.random.rand()*(self.max_iti_frames-self.min_iti_frames))
+            iti_frames=self.min_iti_frames+int(np.random.rand()*(self.max_iti_frames-self.min_iti_frames))
 
             # Reset movie to beginning
             video_idx=vid_order[t]
@@ -220,18 +220,8 @@ class Block:
                                  'mvmt': self.stimuli[video_idx].movement,
                                  'actr' : self.stimuli[video_idx].actor})
 
-            gaze=psychopy.visual.Circle(self.win,radius=1,fillColor=(1.0,0.0,0.0))
             while not self.stimuli[video_idx].stim.status==visual.FINISHED:
                 self.stimuli[video_idx].stim.draw()
-                if eyetracker is not None and EYETRACKER_DEBUG:
-                    gaze_position=eyetracker.getCurrentGazePosition()
-                    mean_pos=(0.5*(gaze_position[0]+gaze_position[2]), 0.5*(gaze_position[1]+gaze_position[3]))
-                    gaze.setPos(mean_pos)
-                    if fixation_within_tolerance(gaze_position,(0,0),3,self.win):#
-                        gaze.setFillColor((0.0,0.0,1.0))
-                    else:
-                        gaze.setFillColor((1.0,0.0,0.0))
-                    gaze.draw()
                 self.win.flip()
 
             all_keys=event.getKeys()
@@ -252,7 +242,7 @@ class Block:
                 event.clearEvents()
 
             # Black screen for delay
-            for i in range(delay_frames):
+            for i in range(iti_frames):
                 self.win.flip()
 
         # Stop netstation recording

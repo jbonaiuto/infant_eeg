@@ -2,8 +2,6 @@ import os
 from psychopy import visual
 from infant_eeg.config import DATA_DIR
 
-__author__ = 'jbonaiuto'
-
 class MovieStimulus:
     """
     A movie stimulus

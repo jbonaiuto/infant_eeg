@@ -2,9 +2,6 @@ import math
 from psychopy.tools.monitorunittools import deg2pix
 from egi import threaded as egi
 
-__author__ = 'EEGlabUser'
-
-
 def sendEvent(ns, eye_tracker, code, label, table):
     if ns is not None:
         ns.send_event(code, label=label, timestamp=egi.ms_localtime(), table=table)
