@@ -51,6 +51,11 @@ class Experiment:
             os.path.join(DATA_DIR,'images','distractors','star-cartoon.jpg'),distractor_duration_frames, self.win)
 
         self.ns=None
+        if exp_info['eeg']:
+            # connect to netstation
+            self.ns = egi.Netstation()
+            ms_localtime = egi.ms_localtime
+
         self.eye_tracker=None
         self.mouse = None
         if exp_info['eye tracking']:
@@ -74,15 +79,13 @@ class Experiment:
             core.quit()
 
     def initialize(self):
-        # connect to netstation
-        self.ns = egi.Netstation()
-        ms_localtime = egi.ms_localtime
-        try:
-            self.ns.initialize(NETSTATION_IP, 55513)
-            self.ns.BeginSession()
-            self.ns.StartRecording()
-        except:
-            print('Could not connect with NetStation!')
+        if self.ns is not None:
+            try:
+                self.ns.initialize(NETSTATION_IP, 55513)
+                self.ns.BeginSession()
+                self.ns.StartRecording()
+            except:
+                print('Could not connect with NetStation!')
 
         # Calibrate eyetracker
         if self.eye_tracker is not None:
