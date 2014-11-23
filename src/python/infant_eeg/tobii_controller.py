@@ -8,7 +8,8 @@
 import datetime
 import os
 from math import degrees, atan2
-from psychopy.tools.monitorunittools import pix2deg
+#from psychopy.tools.monitorunittools import pix2deg
+from psychopy.misc import pix2deg
 
 import tobii.sdk.mainloop
 import tobii.sdk.time.clock

@@ -14,7 +14,10 @@ from psychopy.visual import Window
 from xml.etree import ElementTree as ET
 import egi.threaded as egi
 import numpy as np
-from infant_eeg.tobii_controller import TobiiController
+try:
+    from infant_eeg.tobii_controller import TobiiController
+except:
+    pass
 from infant_eeg.util import sendEvent, fixation_within_tolerance
 from infant_eeg.config import MONITOR, SCREEN, NETSTATION_IP, DATA_DIR, CONF_DIR, EYETRACKER_NAME, \
     EYETRACKER_CALIBRATION_POINTS, EYETRACKER_DEBUG

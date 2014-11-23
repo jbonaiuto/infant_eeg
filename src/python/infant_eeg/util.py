@@ -1,5 +1,6 @@
 import math
-from psychopy.tools.monitorunittools import deg2pix
+#from psychopy.tools.monitorunittools import deg2pix
+from psychopy.misc import deg2pix
 from egi import threaded as egi
 
 def sendEvent(ns, eye_tracker, code, label, table):
