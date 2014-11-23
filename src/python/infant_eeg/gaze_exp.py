@@ -1,14 +1,18 @@
+import sys
+if sys.platform=='win32':
+    import ctypes
+    avbin_lib=ctypes.cdll.LoadLibrary('avbin')
+    import psychopy.visual
 import copy
 import os
 from psychopy import data, gui, visual, event, core
-import psychopy
+from psychopy.event import Mouse
 from psychopy.visual import Window
 from xml.etree import ElementTree as ET
 import sys
 import egi.threaded as egi
 from infant_eeg.config import NETSTATION_IP, CONF_DIR, DATA_DIR, MONITOR, SCREEN, EYETRACKER_CALIBRATION_POINTS, \
-    EYETRACKER_NAME, \
-    EYETRACKER_DEBUG
+    EYETRACKER_NAME
 from infant_eeg.distractors import DistractorSet
 import numpy as np
 from infant_eeg.stim import MovieStimulus
@@ -61,8 +65,11 @@ class Experiment:
                                             distractor_duration_frames, self.win)
 
         self.eye_tracker = None
+        self.mouse = None
 
         self.read_xml(file_name)
+        if self.eye_tracker is None:
+            self.mouse=Mouse(win=self.win)
 
     def calibrate_eyetracker(self):
         retval = 'retry'
@@ -105,7 +112,7 @@ class Experiment:
                 self.calibrate_eyetracker()
                 self.eye_tracker.startTracking()
 
-            if not self.blocks[block_name].run(ns, self.eye_tracker):
+            if not self.blocks[block_name].run(ns, self.eye_tracker, self.mouse):
                 break
 
             if self.eye_tracker is not None:
@@ -241,7 +248,7 @@ class Trial:
         self.video_stim = None
         self.actor = actor
 
-    def run(self, ns, eyetracker):
+    def run(self, ns, eyetracker, mouse):
         # Reset movie to beginning
         self.video_stim.reload(self.win)
 
@@ -267,26 +274,28 @@ class Trial:
                              'gaze': self.gaze,
                              'actr': self.actor})
         while attending_frames < self.min_attending_frames:
-            if eyetracker is not None and EYETRACKER_DEBUG:
+            if eyetracker is not None:
                 gaze_position = eyetracker.getCurrentGazePosition()
-                if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
-                                             self.images[self.attention].size[0], self.win):
-                    attending_frames += 1
-                    if attending_frames==1:
-                        self.win.callOnFlip(sendEvent, ns, eyetracker, 'att1', 'attn stim',
-                            {'code': self.code,
-                             'attn': self.attention,
-                             'gaze': self.gaze,
-                             'actr': self.actor})
-                else:
-                    attending_frames = 0
-                self.init_frame.draw()
-                for image in self.images.values():
-                    image.draw()
-                if not idx % 3 == 0:
-                    self.highlight.draw()
-                self.win.flip()
-                idx += 1
+            else:
+                gaze_position = mouse.getPos()
+            if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
+                                         self.images[self.attention].size[0], self.win):
+                attending_frames += 1
+                if attending_frames==1:
+                    self.win.callOnFlip(sendEvent, ns, eyetracker, 'att1', 'attn stim',
+                        {'code': self.code,
+                         'attn': self.attention,
+                         'gaze': self.gaze,
+                         'actr': self.actor})
+            else:
+                attending_frames = 0
+            self.init_frame.draw()
+            for image in self.images.values():
+                image.draw()
+            if not idx % 3 == 0:
+                self.highlight.draw()
+            self.win.flip()
+            idx += 1
 
         if attending_frames >= self.min_attending_frames:
             self.win.callOnFlip(sendEvent, ns, eyetracker, 'mov1', 'movie start',
@@ -296,13 +305,16 @@ class Trial:
                              'actr': self.actor})
             attending_frames = 0
             while not self.video_stim.stim.status == visual.FINISHED:
-                if eyetracker is not None and EYETRACKER_DEBUG:
+                if eyetracker is not None:
                     gaze_position = eyetracker.getCurrentGazePosition()
-                    if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
-                                                 self.images[self.attention].size[0], self.win):
-                        attending_frames += 1
-                    else:
-                        attending_frames=0
+                else:
+                    gaze_position=mouse.getPos()
+
+                if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
+                                             self.images[self.attention].size[0], self.win):
+                    attending_frames += 1
+                else:
+                    attending_frames=0
                 if attending_frames==2:
                     self.win.callOnFlip(sendEvent, ns, eyetracker, 'att2', 'attn face',
                         {'code': self.code,
@@ -343,7 +355,7 @@ class Block:
         self.win.flip()
         event.waitKeys()
 
-    def run(self, ns, eyetracker):
+    def run(self, ns, eyetracker, mouse):
         """
         Run the block
         ns - connection to netstation
@@ -373,7 +385,7 @@ class Block:
             event.clearEvents()
 
             trial_idx = trial_order[t]
-            self.trials[trial_idx].run(ns, eyetracker)
+            self.trials[trial_idx].run(ns, eyetracker, mouse)
 
             all_keys = event.getKeys()
 

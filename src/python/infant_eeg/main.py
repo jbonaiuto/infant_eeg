@@ -1,6 +1,4 @@
 import sys
-from infant_eeg.stim import MovieStimulus
-
 if sys.platform=='win32':
     import ctypes
     avbin_lib=ctypes.cdll.LoadLibrary('avbin')
@@ -18,9 +16,11 @@ try:
     from infant_eeg.tobii_controller import TobiiController
 except:
     pass
-from infant_eeg.util import sendEvent, fixation_within_tolerance
+from infant_eeg.util import sendEvent
 from infant_eeg.config import MONITOR, SCREEN, NETSTATION_IP, DATA_DIR, CONF_DIR, EYETRACKER_NAME, \
-    EYETRACKER_CALIBRATION_POINTS, EYETRACKER_DEBUG
+    EYETRACKER_CALIBRATION_POINTS
+from infant_eeg.stim import MovieStimulus
+
 
 class Experiment:
     """
