@@ -1,110 +1,28 @@
-import sys
-if sys.platform=='win32':
-    import ctypes
-    avbin_lib=ctypes.cdll.LoadLibrary('avbin')
-    import psychopy.visual
-import copy
+from infant_eeg.experiment import Experiment
 import os
-from psychopy import data, gui, visual, event, core
-from psychopy.event import Mouse
-from psychopy.visual import Window
+from psychopy import visual, event
 from xml.etree import ElementTree as ET
-import sys
-import egi.threaded as egi
-from infant_eeg.config import NETSTATION_IP, CONF_DIR, DATA_DIR, MONITOR, SCREEN, EYETRACKER_CALIBRATION_POINTS, \
-    EYETRACKER_NAME
-from infant_eeg.distractors import DistractorSet
+from infant_eeg.config import DATA_DIR
 import numpy as np
 from infant_eeg.stim import MovieStimulus
-from infant_eeg.tobii_controller import TobiiController
 from infant_eeg.util import sendEvent, fixation_within_tolerance
 
 
-class Experiment:
+class GazeFollowingExperiment(Experiment):
     """
     A simple observation task - blocks of various movies presented with distractor images/sounds in between each block
     """
 
     def __init__(self, exp_info, file_name):
-        """
-        file_name - name of XML file containing experiment definition
-        """
-        self.exp_info = exp_info
-        self.name = None
         self.preferential_gaze = None
-        self.num_blocks = 0
-        self.blocks = {}
         self.congruent_actor = None
         self.incongruent_actor = None
+        Experiment.__init__(self, exp_info, file_name)
 
-        # Window to use
-        wintype = 'pyglet'  # use pyglet if possible, it's faster at event handling
-        self.win = Window(
-            [1280, 1024],
-            monitor=MONITOR,
-            screen=SCREEN,
-            units="deg",
-            fullscr=True,
-            # fullscr=False,
-            color=[-1, -1, -1],
-            winType=wintype)
-        self.win.setMouseVisible(False)
-        event.clearEvents()
+    def run(self):
+        self.initialize()
 
-        # Measure frame rate
-        self.mean_ms_per_frame, std_ms_per_frame, median_ms_per_frame = visual.getMsPerFrame(self.win, nFrames=60,
-                                                                                             showVisual=True)
-
-        # Compute distractor duration in frames based on frame rate
-        distractor_duration_frames = int(2000.0 / self.mean_ms_per_frame)
-
-        # Initialize set of distractors
-        self.distractor_set = DistractorSet(os.path.join(DATA_DIR, 'images', 'distractors', 'space'),
-                                            os.path.join(DATA_DIR, 'sounds', 'distractors'),
-                                            os.path.join(DATA_DIR, 'images', 'distractors', 'star-cartoon.jpg'),
-                                            distractor_duration_frames, self.win)
-
-        self.eye_tracker = None
-        self.mouse = None
-
-        self.read_xml(file_name)
-        if self.eye_tracker is None:
-            self.mouse=Mouse(win=self.win)
-
-    def calibrate_eyetracker(self):
-        retval = 'retry'
-        while retval == 'retry':
-            retval = self.eye_tracker.doCalibration(EYETRACKER_CALIBRATION_POINTS)
-        if retval == 'abort':
-            self.eye_tracker.closeDataFile()
-            self.win.close()
-            core.quit()
-
-    def run(self, ns):
-        """
-        Run task
-        ns - netstation connection
-        """
-        # Calibrate eyetracker
-        if self.eye_tracker is not None:
-            eyetracking_logfile = os.path.join(DATA_DIR, 'logs', '%s_%s_%s.log' % (self.exp_info['child_id'],
-                                                                                   self.exp_info['date'],
-                                                                                   self.exp_info['session']))
-            self.eye_tracker.setDataFile(eyetracking_logfile, self.exp_info)
-            self.calibrate_eyetracker()
-
-        # Create random block order
-        n_repeats = int(self.num_blocks / len(self.blocks.keys()))
-        self.block_order = []
-        for i in range(n_repeats):
-            subblock_order = copy.copy(self.blocks.keys())
-            np.random.shuffle(subblock_order)
-            self.block_order.extend(subblock_order)
-
-        if self.eye_tracker is not None:
-            self.eye_tracker.startTracking()
-
-        self.preferential_gaze.run(ns, self.eye_tracker)
+        self.preferential_gaze.run(self.ns, self.eye_tracker)
 
         for block_name in self.block_order:
             if self.distractor_set.run() and self.eye_tracker is not None:
@@ -112,42 +30,21 @@ class Experiment:
                 self.calibrate_eyetracker()
                 self.eye_tracker.startTracking()
 
-            if not self.blocks[block_name].run(ns, self.eye_tracker, self.mouse):
+            if not self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse):
                 break
 
             if self.eye_tracker is not None:
                 self.eye_tracker.flushData()
 
-        self.preferential_gaze.run(ns, self.eye_tracker)
+        self.preferential_gaze.run(self.ns, self.eye_tracker)
 
-        if self.eye_tracker is not None:
-            self.eye_tracker.stopTracking()
-            self.eye_tracker.closeDataFile()
-            #self.eye_tracker.destroy()
-
-        # close netstation connection
-        if ns:
-            ns.StopRecording()
-            ns.EndSession()
-            ns.finalize()
-
-        self.win.close()
-        core.quit()
-        if self.eye_tracker is not None:
-            self.eye_tracker.destroy()
-
-
+        self.close()
 
     def read_xml(self, file_name):
         root_element = ET.parse(file_name).getroot()
         self.name = root_element.attrib['name']
         self.type = root_element.attrib['type']
         self.num_blocks = int(root_element.attrib['num_blocks'])
-        if int(root_element.attrib['eyetracking']) > 0:
-            # Initialize eyetracker
-            self.eye_tracker = TobiiController(self.win)
-            self.eye_tracker.waitForFindEyeTracker()
-            self.eye_tracker.activate(EYETRACKER_NAME)
 
         preferential_gaze_node = root_element.find('preferential_gaze')
         preferential_gaze_duration = float(preferential_gaze_node.attrib['duration'])
@@ -175,12 +72,14 @@ class Experiment:
             num_trials = int(block_node.attrib['num_trials'])
             init_stim_ms = float(block_node.attrib['init_stim'])
             min_attending_ms = float(block_node.attrib['min_attending'])
+            max_attending_ms = float(block_node.attrib['max_attending'])
             min_iti_ms = float(block_node.attrib['min_iti'])
             max_iti_ms = float(block_node.attrib['max_iti'])
 
             # Compute delay in frames based on frame rate
             init_stim_frames = int(init_stim_ms / self.mean_ms_per_frame)
             min_attending_frames = int(min_attending_ms / self.mean_ms_per_frame)
+            max_attending_frames = int(max_attending_ms / self.mean_ms_per_frame)
             min_iti_frames = int(min_iti_ms / self.mean_ms_per_frame)
             max_iti_frames = int(max_iti_ms / self.mean_ms_per_frame)
 
@@ -213,7 +112,8 @@ class Experiment:
                     actor = self.congruent_actor
                 else:
                     actor = self.incongruent_actor
-                trial = Trial(self.win, code, init_stim_frames, min_attending_frames, left_image, right_image, attention, gaze, actor)
+                trial = Trial(self.win, code, init_stim_frames, min_attending_frames, max_attending_frames, left_image,
+                              right_image, attention, gaze, actor)
                 if trial.gaze == 'cong':
                     trial.init_frame = block.video_init_frames[self.congruent_actor][trial.attention]
                     trial.video_stim = block.videos[self.congruent_actor][trial.attention]
@@ -229,11 +129,13 @@ class Experiment:
 
 
 class Trial:
-    def __init__(self, win, code, init_stim_frames, min_attending_frames, left_image, right_image, attention, gaze, actor):
+    def __init__(self, win, code, init_stim_frames, min_attending_frames, max_attending_frames, left_image, right_image,
+                 attention, gaze, actor):
         self.win = win
         self.code = code
         self.init_stim_frames = init_stim_frames
         self.min_attending_frames = min_attending_frames
+        self.max_attending_frames = max_attending_frames
         self.images = {}
         self.images['l'] = visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images', left_image))
         self.images['l'].pos = [-20, 0]
@@ -273,7 +175,7 @@ class Trial:
                              'attn': self.attention,
                              'gaze': self.gaze,
                              'actr': self.actor})
-        while attending_frames < self.min_attending_frames:
+        while attending_frames < self.min_attending_frames and idx<self.max_attending_frames:
             if eyetracker is not None:
                 gaze_position = eyetracker.getCurrentGazePosition()
             else:
@@ -304,23 +206,24 @@ class Trial:
                              'gaze': self.gaze,
                              'actr': self.actor})
             attending_frames = 0
+            attended_face=False
             while not self.video_stim.stim.status == visual.FINISHED:
                 if eyetracker is not None:
                     gaze_position = eyetracker.getCurrentGazePosition()
                 else:
-                    gaze_position=mouse.getPos()
+                    gaze_position = mouse.getPos()
 
-                if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
-                                             self.images[self.attention].size[0], self.win):
+                if fixation_within_tolerance(gaze_position, self.init_frame.pos, self.init_frame.size[0], self.win):
                     attending_frames += 1
                 else:
                     attending_frames=0
-                if attending_frames==2:
+                if attending_frames>=self.min_attending_frames and not attended_face:
                     self.win.callOnFlip(sendEvent, ns, eyetracker, 'att2', 'attn face',
                         {'code': self.code,
                          'attn': self.attention,
                          'gaze': self.gaze,
                          'actr': self.actor})
+                    attended_face=True
                 self.video_stim.stim.draw()
                 for image in self.images.values():
                     image.draw()
@@ -442,38 +345,3 @@ class PreferentialGaze:
             self.win.flip()
         sendEvent(ns, eyetracker, 'pge%d' % self.run_idx, "pg end", {})
         self.run_idx+=1
-
-
-if __name__ == '__main__':
-    # experiment parameters
-    expInfo = {
-        'child_id': '',
-        'date': data.getDateStr(),
-        'session': '',
-        'diagnosis': '',
-        'age': '',
-        'gender': '',
-        'experimenter_id': '',
-    }
-
-    # present a dialogue to change params
-    dlg = gui.DlgFromDict(
-        expInfo,
-        title='Gaze',
-        fixed=['dateStr']
-    )
-
-    # connect to netstation
-    ns = egi.Netstation()
-    ms_localtime = egi.ms_localtime
-    try:
-        ns.initialize(NETSTATION_IP, 55513)
-        ns.BeginSession()
-        ns.StartRecording()
-    except:
-        print('Could not connect with NetStation!')
-        ns = None
-
-    # run task
-    exp = Experiment(expInfo, os.path.join(CONF_DIR, 'gaze_experiment.xml'))
-    exp.run(ns)
