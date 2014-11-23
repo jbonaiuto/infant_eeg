@@ -213,7 +213,7 @@ class Trial:
                 else:
                     gaze_position = mouse.getPos()
 
-                if fixation_within_tolerance(gaze_position, self.init_frame.pos, self.init_frame.size[0], self.win):
+                if fixation_within_tolerance(gaze_position, self.init_frame.pos, 10, self.win):
                     attending_frames += 1
                 else:
                     attending_frames=0
