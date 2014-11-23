@@ -1,7 +1,7 @@
+from infant_eeg.experiment import Experiment
 from xml.etree import ElementTree as ET
 import numpy as np
 from psychopy import event, visual
-from infant_eeg.experiment import Experiment
 from infant_eeg.stim import MovieStimulus
 from infant_eeg.util import sendEvent
 

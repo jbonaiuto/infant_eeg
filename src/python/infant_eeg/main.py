@@ -1,8 +1,8 @@
+from infant_eeg.facial_movement_exp import FacialMovementExperiment
+from infant_eeg.gaze_following_exp import GazeFollowingExperiment
 import os
 from psychopy import data, gui
 from infant_eeg.config import CONF_DIR
-from infant_eeg.facial_movement_exp import FacialMovementExperiment
-from infant_eeg.gaze_following_exp import GazeFollowingExperiment
 
 if __name__=='__main__':
     # experiment parameters
