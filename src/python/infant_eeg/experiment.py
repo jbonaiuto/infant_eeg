@@ -58,12 +58,12 @@ class Experiment:
 
         self.eye_tracker=None
         self.mouse = None
-        if exp_info['eye tracking']:
+        if exp_info['eyetracking source']=='tobii':
             # Initialize eyetracker
             self.eye_tracker = TobiiController(self.win)
             self.eye_tracker.waitForFindEyeTracker()
             self.eye_tracker.activate(EYETRACKER_NAME)
-        elif exp_info['debug mode']:
+        elif exp_info['eyetracking source']=='mouse':
             self.mouse = event.Mouse(win=self.win)
 
         self.read_xml(file_name)

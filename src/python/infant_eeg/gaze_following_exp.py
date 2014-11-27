@@ -176,9 +176,10 @@ class Trial:
                              'gaze': self.gaze,
                              'actr': self.actor})
         while attending_frames < self.min_attending_frames and idx<self.max_attending_frames:
+            gaze_position=(0,0)
             if eyetracker is not None:
                 gaze_position = eyetracker.getCurrentGazePosition()
-            else:
+            elif mouse is not None:
                 gaze_position = mouse.getPos()
             if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
                                          self.images[self.attention].size[0], self.win):
@@ -208,9 +209,10 @@ class Trial:
             attending_frames = 0
             attended_face=False
             while not self.video_stim.stim.status == visual.FINISHED:
+                gaze_position=(0,0)
                 if eyetracker is not None:
                     gaze_position = eyetracker.getCurrentGazePosition()
-                else:
+                elif mouse is not None:
                     gaze_position = mouse.getPos()
 
                 if fixation_within_tolerance(gaze_position, self.init_frame.pos, 10, self.win):
