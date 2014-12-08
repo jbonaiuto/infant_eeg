@@ -363,9 +363,9 @@ class TobiiController:
 
         self.datafile = None
 
-    def recordEvent(self, event):
+    def recordEvent(self, event, label, table):
         t = self.syncmanager.convert_from_local_to_remote(self.clock.get_time())
-        self.eventData.append((t, event))
+        self.eventData.append((t, (event, label, table)))
 
     def flushData(self):
         if self.datafile is None:
@@ -399,8 +399,10 @@ class TobiiController:
             self.datafile.write('\n')
 
         formatstr = '%.1f' + '\t' * 9 + '%s\n'
-        for e in self.eventData:
-            self.datafile.write(formatstr % ((e[0] - timeStampStart) / 1000.0, e[1]))
+        for t, (e, label, table) in self.eventData:
+            tablestr=','.join('%s:%s' % (key, val) for key, val in table.iteritems())
+            eventstr = '%s,%s,%s' % (e, label, tablestr)
+            self.datafile.write(formatstr % ((t - timeStampStart) / 1000.0, eventstr))
 
         self.gazeData = []
         self.eventData = []

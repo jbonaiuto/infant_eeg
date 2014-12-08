@@ -8,7 +8,7 @@ def send_event(ns, eye_tracker, code, label, table):
     if ns is not None:
         ns.send_event(code, label=label, timestamp=egi.ms_localtime(), table=table)
     if eye_tracker is not None:
-        eye_tracker.recordEvent(code)
+        eye_tracker.recordEvent(code, label, table)
 
 
 def deg2norm_x(position, window):
