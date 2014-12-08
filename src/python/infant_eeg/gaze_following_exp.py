@@ -195,8 +195,8 @@ class Trial:
         self.images['l'].pos = [-20, 0]
         self.images['r'].pos = [20, 0]
         self.highlight = visual.Rect(self.win, width=self.images['l'].size[0] + 1, height=self.images['r'].size[1] + 1)
-        self.highlight.lineColor = [1, 1, 0]
-        self.highlight.lineWidth = 5
+        self.highlight.lineColor = [1, 0, 0]
+        self.highlight.lineWidth = 10
         self.attention = attention
         self.gaze = gaze
         self.init_frame = None
@@ -265,7 +265,7 @@ class Trial:
                 image.draw()
 
             # Highlight stimulus
-            if not idx % 3 == 0:
+            if not idx % 5 == 0:
                 self.highlight.draw()
 
             self.win.flip()
@@ -440,13 +440,13 @@ class PreferentialGaze:
         left_actor = None
         right_actor = None
         if np.random.rand() < 0.5:
-            self.actors[0].stim.pos = [-10, 0]
-            self.actors[1].stim.pos = [10, 0]
+            self.actors[0].stim.pos = [-15, 0]
+            self.actors[1].stim.pos = [15, 0]
             left_actor = self.actors[0].actor
             right_actor = self.actors[1].actor
         else:
-            self.actors[0].stim.pos = [10, 0]
-            self.actors[1].stim.pos = [-10, 0]
+            self.actors[0].stim.pos = [15, 0]
+            self.actors[1].stim.pos = [-15, 0]
             left_actor = self.actors[1].actor
             right_actor = self.actors[0].actor
 
