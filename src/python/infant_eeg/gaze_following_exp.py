@@ -437,17 +437,23 @@ class PreferentialGaze:
         """
 
         # Show actors on random sides of screen
+        left_actor = None
+        right_actor = None
         if np.random.rand() < 0.5:
             self.actors[0].stim.pos = [-10, 0]
             self.actors[1].stim.pos = [10, 0]
+            left_actor = self.actors[0].actor
+            right_actor = self.actors[1].actor
         else:
             self.actors[0].stim.pos = [10, 0]
             self.actors[1].stim.pos = [-10, 0]
+            left_actor = self.actors[1].actor
+            right_actor = self.actors[0].actor
 
         # Draw images
-        self.win.callOnFlip(send_event, ns, eyetracker, 'pgst', 'pg start', {})
+        self.win.callOnFlip(send_event, ns, eyetracker, 'pgst', 'pg start', {'left': left_actor, 'right': right_actor})
         for i in range(self.duration_frames):
             for actor in self.actors:
                 actor.stim.draw()
             self.win.flip()
-        send_event(ns, eyetracker, 'pgen', "pg end", {})
+        send_event(ns, eyetracker, 'pgen', "pg end", {'left': left_actor, 'right': right_actor})
