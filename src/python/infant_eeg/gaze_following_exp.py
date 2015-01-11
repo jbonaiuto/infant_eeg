@@ -232,6 +232,7 @@ class Trial:
 
         # Show initial frame of video until highlighted stimulus if fixated on or abort
         attending_frames = 0
+        highlight_on=False
         idx = 0
         self.win.callOnFlip(send_event, ns, eyetracker, 'ima2', 'attn start',
                             {'code': self.code,
@@ -263,12 +264,28 @@ class Trial:
 
             # Draw init frame of movie and two stimuli
             self.init_frame.draw()
+            current_pos=self.images[self.attention].pos
+            if idx % 5 == 0:
+                new_pos=current_pos
+                if current_pos[1]==0 or current_pos[1]==-1:
+                    new_pos[1]=1
+                else:
+                    new_pos[1]=-1
+                self.images[self.attention].setPos(new_pos)
+                self.highlight.setPos(self.images[self.attention].pos)
+
             for image in self.images.values():
                 image.draw()
 
             # Highlight stimulus
-            if not idx % 5 == 0:
-                self.highlight.draw()
+            if idx % 5 == 0:
+                if highlight_on:
+                    highlight_on=False
+                else:
+                    highlight_on=True
+                if highlight_on:
+                    self.highlight.draw()
+
 
             draw_eye_debug(eyetracker, gaze_debug, mouse)
 
