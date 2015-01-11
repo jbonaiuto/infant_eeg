@@ -38,3 +38,13 @@ def fixation_within_tolerance(gaze_position, position, tolerance, win):
     pos_norm = (deg2norm_x(position[0], win), deg2norm_y(position[1], win))
     fixation_dist = get_dist(gaze_norm, pos_norm, aspect=aspect)
     return fixation_dist<tolerance_norm
+
+def draw_eye_debug(eyetracker, gaze_debug, mouse):
+    if gaze_debug is not None:
+        if eyetracker is not None:
+            gaze_position = eyetracker.getCurrentGazePosition()
+            gaze_position=(0.5*(gaze_position[0]+gaze_position[2]), 0.5*(gaze_position[1]+gaze_position[3]))
+        elif mouse is not None:
+            gaze_position = mouse.getPos()
+        gaze_debug.setPos(gaze_position)
+        gaze_debug.draw()

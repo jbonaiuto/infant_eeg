@@ -98,34 +98,72 @@ class TobiiController:
     # calibration methods
     ############################################################################
 
-    def doCalibration(self, calibrationPoints):
+    def calibratePoint(self, clock, last_pos, p):
+        clock.reset()
+        currentTime = clock.getTime()
+        x_diff = p.x - last_pos.x
+        y_diff = p.y - last_pos.y
+        angle = degrees(atan2(y_diff, x_diff)) + 90
+        self.rocket_img.setOri(angle)
+        while currentTime <= 1.5:
+            rel_pos = Point2D()
+            rel_pos.x = last_pos.x + ((currentTime / 1.5) * (p.x - last_pos.x))
+            rel_pos.y = last_pos.y + ((currentTime / 1.5) * (p.y - last_pos.y))
+            self.rocket_img.setPos((pix2deg((rel_pos.x - 0.5) * self.win.size[0], self.win.monitor),
+                                    pix2deg((0.5 - rel_pos.y) * self.win.size[1], self.win.monitor)))
+            self.rocket_img.setSize((pix2deg(110.67 * (1.5 - currentTime) + 4, self.win.monitor),
+                                     pix2deg(196 * (1.5 - currentTime) + 4, self.win.monitor)))
+            psychopy.event.getKeys()
+            self.rocket_img.draw()
+            self.win.flip()
+            currentTime = clock.getTime()
+        self.add_point_completed = False
+        self.eyetracker.AddCalibrationPoint(p, lambda error, r: self.on_add_completed(error, r))
+        while not self.add_point_completed:
+            psychopy.event.getKeys()
+            self.rocket_img.draw()
+            self.win.flip()
+
+    def doCalibration(self, calibrationPoints, calib=None):
+        # Can only calibrate with eyetracker
         if self.eyetracker is None:
             return
 
+        # Points to calibrate
         self.points = calibrationPoints
         self.point_index = -1
 
+        # Rocket image
+        self.rocket_img = psychopy.visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images', 'rocket.png'))
+        # Results image
         img = Image.new('RGB', self.win.size)
         draw = ImageDraw.Draw(img)
-
-        self.rocket_img = psychopy.visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images', 'rocket.png'))
         self.calresult = psychopy.visual.SimpleImageStim(self.win, img)
+        # Results message
         self.calresultmsg = psychopy.visual.TextStim(self.win, pos=(pix2deg(0, self.win.monitor),
                                                                     pix2deg(-self.win.size[1] / 4, self.win.monitor)))
-        self.calresultmsg.setText('Start calibration:SPACE')
+        # Calibration point labels
+        if calib is None:
+            self.point_labels=[]
 
+        # Start calibration instruction
+        self.calresultmsg.setText('Start calibration:SPACE')
+        # Left eye status
         self.left_eye_status = psychopy.visual.Circle(self.win, radius=pix2deg(40, self.win.monitor),
                                                       pos=(pix2deg(-50, self.win.monitor),
                                                            pix2deg(-self.win.size[1] / 3, self.win.monitor)))
+        # Right eye status
         self.right_eye_status = psychopy.visual.Circle(self.win, radius=pix2deg(40, self.win.monitor),
                                                        pos=(pix2deg(50, self.win.monitor),
                                                             pix2deg(-self.win.size[1] / 3, self.win.monitor)))
 
+        # Reset gaze and event data and start tracking
         self.gazeData = []
         self.eventData = []
         self.eyetracker.events.OnGazeDataReceived += self.on_gazedata
         self.eyetracker.StartTracking()
 
+        # Wait until space key is hit
         waitkey = True
         while waitkey:
             for key in psychopy.event.getKeys():
@@ -143,63 +181,57 @@ class TobiiController:
             self.left_eye_status.draw()
             self.right_eye_status.draw()
             self.win.flip()
+
+        # Stop tracking and reset gaze data
         self.eyetracker.StopTracking()
         self.eyetracker.events.OnGazeDataReceived -= self.on_gazedata
         self.gazeData = []
         self.eventData = []
 
+        # Initialize calibration
         self.initcalibration_completed = False
         print "Init calibration"
         self.eyetracker.StartCalibration(lambda error, r: self.on_calib_start(error, r))
         while not self.initcalibration_completed:
             pass
 
+        # If we're updating a calibration
+        if calib is not None:
+            # Set calibration
+            self.setcalibration_completed=False
+            self.eyetracker.SetCalibration(self.calib,lambda error, r: self.on_calib_set(error, r))
+            while not self.setcalibration_completed:
+                pass
+
+        # Calibrate each point
         clock = psychopy.core.Clock()
         last_pos = Point2D(x=0.5, y=0.5)
         for self.point_index in range(len(self.points)):
             p = Point2D()
             p.x, p.y = self.points[self.point_index]
-            clock.reset()
-            currentTime = clock.getTime()
-            x_diff = p.x - last_pos.x
-            y_diff = p.y - last_pos.y
-            angle = degrees(atan2(y_diff, x_diff)) + 90
-            self.rocket_img.setOri(angle)
-            while currentTime <= 1.5:
-                rel_pos = Point2D()
-                rel_pos.x = last_pos.x + ((currentTime / 1.5) * (p.x - last_pos.x))
-                rel_pos.y = last_pos.y + ((currentTime / 1.5) * (p.y - last_pos.y))
-                self.rocket_img.setPos((pix2deg((rel_pos.x - 0.5) * self.win.size[0], self.win.monitor),
-                                        pix2deg((0.5 - rel_pos.y) * self.win.size[1], self.win.monitor)))
-                self.rocket_img.setSize((pix2deg(110.67 * (1.5 - currentTime) + 4, self.win.monitor),
-                                         pix2deg(196 * (1.5 - currentTime) + 4, self.win.monitor)))
-                psychopy.event.getKeys()
-                self.rocket_img.draw()
-                self.win.flip()
-                currentTime = clock.getTime()
-            self.add_point_completed = False
-            self.eyetracker.AddCalibrationPoint(p, lambda error, r: self.on_add_completed(error, r))
-            while not self.add_point_completed:
-                psychopy.event.getKeys()
-                self.rocket_img.draw()
-                self.win.flip()
+            self.calibratePoint(clock, last_pos, p)
             last_pos = Point2D(x=p.x, y=p.y)
 
+        # Compute calibration
         self.computeCalibration_completed = False
         self.computeCalibration_succeeded = False
         self.eyetracker.ComputeCalibration(lambda error, r: self.on_calib_compute(error, r))
         while not self.computeCalibration_completed:
             pass
+        # Stop calibration
         self.eyetracker.StopCalibration(None)
 
         self.win.flip()
 
+        # Get calibration
         self.getcalibration_completed = False
         self.calib = self.eyetracker.GetCalibration(lambda error, calib: self.on_calib_response(error, calib))
         while not self.getcalibration_completed:
             pass
 
         draw.rectangle(((0, 0), tuple(self.win.size)), fill=(128, 128, 128))
+
+        can_accept=False
         if not self.computeCalibration_succeeded:
             #computeCalibration failed.
             self.calresultmsg.setText('Not enough data was collected (Retry:r/Abort:ESC)')
@@ -208,15 +240,35 @@ class TobiiController:
             #no calibration data
             self.calresultmsg.setText('No calibration data (Retry:r/Abort:ESC)')
         else:
+            can_accept=True
+            point_list = []
             points = {}
             for data in self.calib.plot_data:
                 points[data.true_point] = {'left': data.left, 'right': data.right}
+                point_list.append(data.true_point)
 
-            if len(points) == 0:
+            if len(point_list) == 0:
                 self.calresultmsg.setText('No true calibration data (Retry:r/Abort:ESC)')
 
             else:
-                for p, d in points.iteritems():
+                for idx,(x,y) in enumerate(self.points):
+                    draw.ellipse(((x * self.win.size[0] - 10,
+                                   y * self.win.size[1] - 10),
+                                  (x * self.win.size[0] + 10,
+                                   y * self.win.size[1] + 10)),
+                                 outline=(0, 0, 0))
+                    if calib is None:
+                        num_txt=psychopy.visual.TextStim(self.win, pos=(pix2deg((x-0.5) * self.win.size[0] - 10, self.win.monitor),
+                                                                        pix2deg((0.5-y) * self.win.size[1] - 20, self.win.monitor)))
+                        num_txt.setText(str(idx+1))
+                        self.point_labels.append(num_txt)
+                for idx,p in enumerate(point_list):
+                    d = points[p]
+                    draw.ellipse(((p.x * self.win.size[0] - 10,
+                                   p.y * self.win.size[1] - 10),
+                                  (p.x * self.win.size[0] + 10,
+                                   p.y * self.win.size[1] + 10)),
+                                 outline=(0, 0, 0))
                     if d['left'].validity == 1:
                         draw.line(((p.x * self.win.size[0],
                                     p.y * self.win.size[1]),
@@ -227,33 +279,12 @@ class TobiiController:
                                     p.y * self.win.size[1]),
                                    (d['right'].map_point.x * self.win.size[0],
                                     d['right'].map_point.y * self.win.size[1])), fill=(0, 255, 0))
-                    draw.ellipse(((p.x * self.win.size[0] - 10,
-                                   p.y * self.win.size[1] - 10),
-                                  (p.x * self.win.size[0] + 10,
-                                   p.y * self.win.size[1] + 10)),
-                                 outline=(0, 0, 0))
-                self.calresultmsg.setText('Accept calibration results (Accept:a/Retry:r/Abort:ESC)')
 
-        self.calresult.setImage(img)
+                self.calresultmsg.setText('Accept calibration results (Accept:a/Redo:#/Retry:r/Abort:ESC)')
 
-        waitkey = True
-        retval = None
-        while waitkey:
-            for key in psychopy.event.getKeys():
-                if key == 'a':
-                    retval = 'accept'
-                    waitkey = False
-                elif key == 'r':
-                    retval = 'retry'
-                    waitkey = False
-                elif key == 'escape':
-                    retval = 'abort'
-                    waitkey = False
-            self.calresult.draw()
-            self.calresultmsg.draw()
-            self.win.flip()
+            self.calresult.setImage(img)
 
-        return retval
+        return can_accept
 
 
     def on_calib_start(self, error, r):
@@ -268,6 +299,12 @@ class TobiiController:
             return False
 
         self.add_point_completed = True
+        return False
+
+    def on_remove_completed(self, error):
+        if error:
+            print "Remove Calibration Point failed because of error. (0x%0x)" % error
+        self.remove_point_completed = True
         return False
 
     def on_calib_compute(self, error, r):
@@ -298,6 +335,12 @@ class TobiiController:
         self.getcalibration_completed = True
         return False
 
+    def on_calib_set(self, error, r):
+        if error:
+            print "Set Calibration failed because of error. (0x%0x)" % error
+            return False
+        self.setcalibration_completed=True
+        return False
 
     def on_calib_done(self, status, msg):
         # When the calibration procedure is done we update the calibration plot

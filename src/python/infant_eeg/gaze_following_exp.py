@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 from infant_eeg.config import DATA_DIR
 import numpy as np
 from infant_eeg.stim import MovieStimulus
-from infant_eeg.util import send_event, fixation_within_tolerance
+from infant_eeg.util import send_event, fixation_within_tolerance, draw_eye_debug
 
 
 class GazeFollowingExperiment(Experiment):
@@ -36,7 +36,7 @@ class GazeFollowingExperiment(Experiment):
 
         # Run preferential gaze trials
         for i in range(self.preferential_gaze_trials):
-            self.preferential_gaze.run(self.ns, self.eye_tracker)
+            self.preferential_gaze.run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug)
             self.distractor_set.run()
 
         # Run blocks
@@ -49,7 +49,7 @@ class GazeFollowingExperiment(Experiment):
                 self.eye_tracker.startTracking()
 
             # Run block
-            if not self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse):
+            if not self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug):
                 break
 
             # Write eytracking data to file
@@ -58,7 +58,7 @@ class GazeFollowingExperiment(Experiment):
 
         # Run preferential gaze trials
         for i in range(self.preferential_gaze_trials):
-            self.preferential_gaze.run(self.ns, self.eye_tracker)
+            self.preferential_gaze.run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug)
             self.distractor_set.run()
 
         # End experiment
@@ -203,7 +203,7 @@ class Trial:
         self.video_stim = None
         self.actor = actor
 
-    def run(self, ns, eyetracker, mouse):
+    def run(self, ns, eyetracker, mouse, gaze_debug):
         """
         Run trial
         :param ns - connection to netstation
@@ -224,6 +224,7 @@ class Trial:
             self.init_frame.draw()
             for image in self.images.values():
                 image.draw()
+            draw_eye_debug(eyetracker, gaze_debug, mouse)
             self.win.flip()
 
         # Set which stimulus to highlight
@@ -268,6 +269,8 @@ class Trial:
             if not idx % 5 == 0:
                 self.highlight.draw()
 
+            draw_eye_debug(eyetracker, gaze_debug, mouse)
+
             self.win.flip()
             idx += 1
 
@@ -305,6 +308,8 @@ class Trial:
                 for image in self.images.values():
                     image.draw()
 
+                draw_eye_debug(eyetracker, gaze_debug, mouse)
+
                 self.win.flip()
 
 
@@ -338,7 +343,7 @@ class Block:
         self.win.flip()
         event.waitKeys()
 
-    def run(self, ns, eyetracker, mouse):
+    def run(self, ns, eyetracker, mouse, gaze_debug):
         """
         Run the block
         :param ns - connection to netstation
@@ -371,7 +376,7 @@ class Block:
 
             # Run trial
             trial_idx = trial_order[t]
-            self.trials[trial_idx].run(ns, eyetracker, mouse)
+            self.trials[trial_idx].run(ns, eyetracker, mouse, gaze_debug)
 
             # Check user input
             all_keys = event.getKeys()
@@ -428,7 +433,7 @@ class PreferentialGaze:
         self.actors = actors
         self.duration_frames = duration_frames
 
-    def run(self, ns, eyetracker):
+    def run(self, ns, eyetracker, mouse, gaze_debug):
         """
         Run trial
         :param ns: netstation connection
@@ -455,5 +460,6 @@ class PreferentialGaze:
         for i in range(self.duration_frames):
             for actor in self.actors:
                 actor.stim.draw()
+            draw_eye_debug(eyetracker, gaze_debug, mouse)
             self.win.flip()
         send_event(ns, eyetracker, 'pgen', "pg end", {'left': left_actor, 'right': right_actor})

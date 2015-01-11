@@ -80,6 +80,10 @@ class Experiment:
             # Initialize mouse
             self.mouse = event.Mouse(win=self.win)
 
+        self.gaze_debug=None
+        if self.exp_info['debug']:
+            self.gaze_debug=psychopy.visual.Circle(self.win, radius=1, fillColor=(1.0,0.0,0.0))
+
         self.read_xml(file_name)
 
     def calibrate_eyetracker(self):
@@ -88,7 +92,34 @@ class Experiment:
         """
         retval = 'retry'
         while retval == 'retry':
-            retval = self.eye_tracker.doCalibration(EYETRACKER_CALIBRATION_POINTS)
+            waitkey = True
+            retval = None
+            can_accept = self.eye_tracker.doCalibration(EYETRACKER_CALIBRATION_POINTS)
+            while waitkey:
+                for key in psychopy.event.getKeys():
+                    if can_accept:
+                        num_entered=True
+                        try:
+                            calib_idx=int(key)
+                            can_accept = self.eye_tracker.doCalibration([EYETRACKER_CALIBRATION_POINTS[calib_idx-1]],
+                                                                        calib=self.eye_tracker.calib)
+                        except:
+                            num_entered=False
+                        if not num_entered and key == 'a':
+                            retval = 'accept'
+                            waitkey = False
+                    elif key == 'r':
+                        retval = 'retry'
+                        waitkey = False
+                    elif key == 'escape':
+                        retval = 'abort'
+                        waitkey = False
+                self.eye_tracker.calresult.draw()
+                self.eye_tracker.calresultmsg.draw()
+                for point_label in self.eye_tracker.point_labels:
+                    point_label.draw()
+                self.win.flip()
+
         if retval == 'abort':
             self.eye_tracker.closeDataFile()
             self.eye_tracker.destroy()

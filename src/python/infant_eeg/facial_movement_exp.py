@@ -3,7 +3,7 @@ from xml.etree import ElementTree
 import numpy as np
 from psychopy import event, visual
 from infant_eeg.stim import MovieStimulus
-from infant_eeg.util import send_event
+from infant_eeg.util import send_event, draw_eye_debug
 
 
 class FacialMovementExperiment(Experiment):
@@ -27,7 +27,7 @@ class FacialMovementExperiment(Experiment):
                 self.eye_tracker.startTracking()
 
             # Run block
-            if not self.blocks[block_name].run(self.ns, self.eye_tracker):
+            if not self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug):
                 break
 
             # Write eyetracker data to file
@@ -99,7 +99,7 @@ class Block:
         self.win.flip()
         event.waitKeys()
 
-    def run(self, ns, eyetracker):
+    def run(self, ns, eyetracker, mouse, gaze_debug):
         """
         Run the block
         :param ns: connection to netstation
@@ -143,6 +143,7 @@ class Block:
                                  'actr': self.stimuli[video_idx].actor})
             while not self.stimuli[video_idx].stim.status == visual.FINISHED:
                 self.stimuli[video_idx].stim.draw()
+                draw_eye_debug(eyetracker, gaze_debug, mouse)
                 self.win.flip()
 
             # Tell netstation the movie has stopped
