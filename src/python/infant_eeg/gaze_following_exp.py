@@ -244,6 +244,7 @@ class Trial:
             gaze_position = (0, 0)
             if eyetracker is not None:
                 gaze_position = eyetracker.getCurrentGazePosition()
+                gaze_position=(0.5*(gaze_position[0]+gaze_position[2]), 0.5*(gaze_position[1]+gaze_position[3]))
             elif mouse is not None:
                 gaze_position = mouse.getPos()
 
@@ -288,6 +289,7 @@ class Trial:
                 gaze_position = (0, 0)
                 if eyetracker is not None:
                     gaze_position = eyetracker.getCurrentGazePosition()
+                    gaze_position=(0.5*(gaze_position[0]+gaze_position[2]), 0.5*(gaze_position[1]+gaze_position[3]))
                 elif mouse is not None:
                     gaze_position = mouse.getPos()
 
