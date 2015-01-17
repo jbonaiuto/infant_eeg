@@ -28,3 +28,4 @@ class MovieStimulus:
         :param win: window movie is playing in
         """
         self.stim = visual.MovieStim(win, os.path.join(DATA_DIR, 'movies', self.file_name), size=(900, 720))
+        self.stim.size*=1.25

@@ -1,11 +1,11 @@
-<experiment name="gaze_following" type="block" num_blocks="20">
+<experiment name="gaze_following" type="block" num_blocks="50">
     <preferential_gaze duration="5000.0" num_trials="3">
         <actor name="CG" file_name='CG.png'/>
         <actor name="FO" file_name="FO.png"/>
     </preferential_gaze>
 
     <blocks>
-        <block name="gaz1" num_trials="4" init_stim="500.0" min_attending="100.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="gaz1" num_trials="4" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
             <videos>
                 <video direction="l" actor="CG" file_name="CG-left.mpg" init_frame="CG-left.png"/>
                 <video direction="r" actor="CG" file_name="CG-right.mpg" init_frame="CG-right.png"/>
@@ -13,10 +13,10 @@
                 <video direction="r" actor="FO" file_name="FO-right.mpg" init_frame="FO-right.png"/>
             </videos>
             <trials>
-                <trial code="l_c" left_image="distractors/space/planet3.jpg" right_image="distractors/space/planet3.jpg" attention="l" gaze="cong"/>
-                <trial code="l_i" left_image="distractors/space/planet3.jpg" right_image="distractors/space/planet3.jpg" attention="l" gaze="inco"/>
-                <trial code="r_c" left_image="distractors/space/planet3.jpg" right_image="distractors/space/planet3.jpg" attention="r" gaze="cong"/>
-                <trial code="r_i" left_image="distractors/space/planet3.jpg" right_image="distractors/space/planet3.jpg" attention="r" gaze="inco"/>
+                <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong"/>
+                <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco"/>
+                <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong"/>
+                <trial code="r_i" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="inco"/>
             </trials>
         </block>
     </blocks>

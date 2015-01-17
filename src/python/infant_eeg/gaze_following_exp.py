@@ -122,6 +122,8 @@ class GazeFollowingExperiment(Experiment):
                 block.video_init_frames[actor][direction] = visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images',
                                                                                                     init_frame),
                                                                              units='pix', size=(900, 720))
+                block.video_init_frames[actor][direction].size*=1.25
+
             # Read trial info
             trials_node = block_node.find('trials')
             trial_nodes = trials_node.findall('trial')
@@ -181,10 +183,12 @@ class Trial:
             'l': visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images', left_image)),
             'r': visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images', right_image))
         }
-        self.images['l'].pos = [-20, 0]
-        self.images['r'].pos = [20, 0]
+        self.images['l'].size*=.95
+        self.images['r'].size*=.95
+        self.images['l'].pos = [-22, 0]
+        self.images['r'].pos = [22, 0]
         self.highlight = visual.Rect(self.win, width=self.images['l'].size[0] + 1, height=self.images['r'].size[1] + 1)
-        self.highlight.lineColor = [1, 0, 0]
+        self.highlight.lineColor = [1, -1, -1]
         self.highlight.lineWidth = 10
         self.attention = attention
         self.gaze = gaze
@@ -273,6 +277,9 @@ class Trial:
         return attending_frames
 
     def play_movie(self, ns, eyetracker, mouse, gaze_debug):
+        self.images['l'].pos = [-22, 0]
+        self.images['r'].pos = [22, 0]
+
         # Play movie
         self.win.callOnFlip(send_event, ns, eyetracker, 'mov1', 'movie start',
             {'code': self.code,
@@ -302,6 +309,8 @@ class Trial:
 
             # Check if looking at face
             if fixation_within_tolerance(gaze_position, self.init_frame.pos, 10, self.win):
+                if gaze_debug is not None:
+                    gaze_debug.fillColor=(-1,-1,1)
                 attending_frames += 1
                 if attending_frames == 1:
                     self.win.callOnFlip(send_event, ns, eyetracker, 'att2', 'attn face',
@@ -310,7 +319,11 @@ class Trial:
                          'gaze': self.gaze,
                          'actr': self.actor})
             else:
+                if gaze_debug is not None:
+                    gaze_debug.fillColor=(1,-1,-1)
                 attending_frames = 0
+        if gaze_debug is not None:
+            gaze_debug.fillColor=(1,-1,-1)
 
     def run(self, ns, eyetracker, mouse, gaze_debug):
         """
@@ -433,6 +446,7 @@ class ActorImage:
         self.actor = actor
         self.filename = filename
         self.stim = visual.ImageStim(win, os.path.join(DATA_DIR, 'images', self.filename))
+        self.stim.size*=1.5
 
 
 class PreferentialGaze:
@@ -474,10 +488,10 @@ class PreferentialGaze:
             right_actor = self.actors[0].actor
 
         # Draw images
-        self.win.callOnFlip(send_event, ns, eyetracker, 'pgst', 'pg start', {'left': left_actor, 'right': right_actor})
+        self.win.callOnFlip(send_event, ns, eyetracker, 'pgst', 'pg start', {'left': left_actor, 'rght': right_actor})
         for i in range(self.duration_frames):
             for actor in self.actors:
                 actor.stim.draw()
             draw_eye_debug(gaze_debug, eyetracker, mouse)
             self.win.flip()
-        send_event(ns, eyetracker, 'pgen', "pg end", {'left': left_actor, 'right': right_actor})
+        send_event(ns, eyetracker, 'pgen', "pg end", {'left': left_actor, 'rght': right_actor})

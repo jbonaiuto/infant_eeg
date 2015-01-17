@@ -82,7 +82,7 @@ class Experiment:
 
         self.gaze_debug=None
         if self.exp_info['debug mode']:
-            self.gaze_debug=psychopy.visual.Circle(self.win, radius=1, fillColor=(1.0,0.0,0.0))
+            self.gaze_debug=psychopy.visual.Circle(self.win, radius=1, fillColor=(1.0,-1.0,-1.0))
 
         self.read_xml(file_name)
 
