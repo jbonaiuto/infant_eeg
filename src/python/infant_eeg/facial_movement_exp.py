@@ -143,7 +143,7 @@ class Block:
                                  'actr': self.stimuli[video_idx].actor})
             while not self.stimuli[video_idx].stim.status == visual.FINISHED:
                 self.stimuli[video_idx].stim.draw()
-                draw_eye_debug(eyetracker, gaze_debug, mouse)
+                draw_eye_debug(gaze_debug, eyetracker, mouse)
                 self.win.flip()
 
             # Tell netstation the movie has stopped

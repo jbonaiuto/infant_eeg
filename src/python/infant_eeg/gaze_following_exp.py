@@ -195,6 +195,127 @@ class Trial:
         self.video_stim = None
         self.actor = actor
 
+    def show_init_stimulus(self, ns, eyetracker, mouse, gaze_debug):
+        # Show two stimuli and initial frame of movie
+        self.win.callOnFlip(send_event, ns, eyetracker, 'ima1', 'stim start',
+            {'code': self.code,
+             'attn': self.attention,
+             'gaze': self.gaze,
+             'actr': self.actor})
+        for i in range(self.init_stim_frames):
+            self.init_frame.draw()
+            for image in self.images.values():
+                image.draw()
+            draw_eye_debug(gaze_debug, eyetracker, mouse)
+            self.win.flip()
+
+    def highlight_peripheral_stimulus(self, ns, eyetracker, mouse, gaze_debug):
+        # Set which stimulus to highlight
+        self.highlight.pos = self.images[self.attention].pos
+        # Show initial frame of video until highlighted stimulus if fixated on or abort
+        attending_frames = 0
+        highlight_on = False
+        idx = 0
+        self.win.callOnFlip(send_event, ns, eyetracker, 'ima2', 'attn start',
+            {'code': self.code,
+             'attn': self.attention,
+             'gaze': self.gaze,
+             'actr': self.actor})
+        while attending_frames < self.min_attending_frames and idx < self.max_attending_frames:
+            # Draw init frame of movie and two stimuli
+            self.init_frame.draw()
+            current_pos = self.images[self.attention].pos
+            if idx % 5 == 0:
+                new_pos = current_pos
+                if current_pos[1] == 0 or current_pos[1] == -1:
+                    new_pos[1] = 1
+                else:
+                    new_pos[1] = -1
+                self.images[self.attention].setPos(new_pos)
+                self.highlight.setPos(self.images[self.attention].pos)
+
+            for image in self.images.values():
+                image.draw()
+
+            # Highlight stimulus
+            if idx % 5 == 0:
+                if highlight_on:
+                    highlight_on = False
+                else:
+                    highlight_on = True
+                if highlight_on:
+                    self.highlight.draw()
+
+            self.win.flip()
+            idx += 1
+
+            # Get gaze position from eyetracker or mouse
+            gaze_position = (0, 0)
+            if eyetracker is not None:
+                gaze_position = eyetracker.getCurrentGazePosition()
+                gaze_position = (
+                0.5 * (gaze_position[0] + gaze_position[2]), 0.5 * (gaze_position[1] + gaze_position[3]))
+            elif mouse is not None:
+                gaze_position = mouse.getPos()
+
+            draw_eye_debug(gaze_debug, eyetracker, mouse)
+
+            # Check if looking at right stimulus
+            if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
+                self.images[self.attention].size[0], self.win):
+                attending_frames += 1
+                if attending_frames == 1:
+                    self.win.callOnFlip(send_event, ns, eyetracker, 'att1', 'attn stim',
+                        {'code': self.code,
+                         'attn': self.attention,
+                         'gaze': self.gaze,
+                         'actr': self.actor})
+            else:
+                attending_frames = 0
+
+        return attending_frames
+
+    def play_movie(self, ns, eyetracker, mouse, gaze_debug):
+        # Play movie
+        self.win.callOnFlip(send_event, ns, eyetracker, 'mov1', 'movie start',
+            {'code': self.code,
+             'attn': self.attention,
+             'gaze': self.gaze,
+             'actr': self.actor})
+
+        attending_frames = 0
+        while not self.video_stim.stim.status == visual.FINISHED:
+
+            # Draw video frames and stimuli
+            self.video_stim.stim.draw()
+            for image in self.images.values():
+                image.draw()
+
+            self.win.flip()
+
+            # Get gaze position from eyetracker or mouse
+            gaze_position = (0, 0)
+            if eyetracker is not None:
+                gaze_position = eyetracker.getCurrentGazePosition()
+                gaze_position = (
+                0.5 * (gaze_position[0] + gaze_position[2]), 0.5 * (gaze_position[1] + gaze_position[3]))
+            elif mouse is not None:
+                gaze_position = mouse.getPos()
+
+            draw_eye_debug(gaze_debug, eyetracker, mouse)
+
+            # Check if looking at face
+            if fixation_within_tolerance(gaze_position, self.init_frame.pos, 10, self.win):
+                attending_frames += 1
+                if attending_frames == 1:
+                    self.win.callOnFlip(send_event, ns, eyetracker, 'att2', 'attn face',
+                        {'code': self.code,
+                         'attn': self.attention,
+                         'gaze': self.gaze,
+                         'actr': self.actor})
+            else:
+                attending_frames = 0
+
     def run(self, ns, eyetracker, mouse, gaze_debug):
         """
         Run trial
@@ -206,122 +327,12 @@ class Trial:
         # Reset movie to beginning
         self.video_stim.reload(self.win)
 
-        # Show two stimuli and initial frame of movie
-        self.win.callOnFlip(send_event, ns, eyetracker, 'ima1', 'stim start',
-                            {'code': self.code,
-                             'attn': self.attention,
-                             'gaze': self.gaze,
-                             'actr': self.actor})
-        for i in range(self.init_stim_frames):
-            self.init_frame.draw()
-            for image in self.images.values():
-                image.draw()
-            draw_eye_debug(eyetracker, gaze_debug, mouse)
-            self.win.flip()
+        self.show_init_stimulus(ns, eyetracker, mouse, gaze_debug)
 
-        # Set which stimulus to highlight
-        self.highlight.pos = self.images[self.attention].pos
+        attending_frames = self.highlight_peripheral_stimulus(ns, eyetracker, mouse, gaze_debug)
 
-        # Show initial frame of video until highlighted stimulus if fixated on or abort
-        attending_frames = 0
-        highlight_on=False
-        idx = 0
-        self.win.callOnFlip(send_event, ns, eyetracker, 'ima2', 'attn start',
-                            {'code': self.code,
-                             'attn': self.attention,
-                             'gaze': self.gaze,
-                             'actr': self.actor})
-        while attending_frames < self.min_attending_frames and idx < self.max_attending_frames:
-
-            # Get gaze position from eyetracker or mouse
-            gaze_position = (0, 0)
-            if eyetracker is not None:
-                gaze_position = eyetracker.getCurrentGazePosition()
-                gaze_position=(0.5*(gaze_position[0]+gaze_position[2]), 0.5*(gaze_position[1]+gaze_position[3]))
-            elif mouse is not None:
-                gaze_position = mouse.getPos()
-
-            # Check if looking at right stimulus
-            if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
-                                         self.images[self.attention].size[0], self.win):
-                attending_frames += 1
-                if attending_frames == 1:
-                    self.win.callOnFlip(send_event, ns, eyetracker, 'att1', 'attn stim',
-                                        {'code': self.code,
-                                         'attn': self.attention,
-                                         'gaze': self.gaze,
-                                         'actr': self.actor})
-            else:
-                attending_frames = 0
-
-            # Draw init frame of movie and two stimuli
-            self.init_frame.draw()
-            current_pos=self.images[self.attention].pos
-            if idx % 5 == 0:
-                new_pos=current_pos
-                if current_pos[1]==0 or current_pos[1]==-1:
-                    new_pos[1]=1
-                else:
-                    new_pos[1]=-1
-                self.images[self.attention].setPos(new_pos)
-                self.highlight.setPos(self.images[self.attention].pos)
-
-            for image in self.images.values():
-                image.draw()
-
-            # Highlight stimulus
-            if idx % 5 == 0:
-                if highlight_on:
-                    highlight_on=False
-                else:
-                    highlight_on=True
-                if highlight_on:
-                    self.highlight.draw()
-
-
-            draw_eye_debug(eyetracker, gaze_debug, mouse)
-
-            self.win.flip()
-            idx += 1
-
-        # Play movie
         if attending_frames >= self.min_attending_frames:
-            self.win.callOnFlip(send_event, ns, eyetracker, 'mov1', 'movie start',
-                                {'code': self.code,
-                                 'attn': self.attention,
-                                 'gaze': self.gaze,
-                                 'actr': self.actor})
-            attending_frames = 0
-            while not self.video_stim.stim.status == visual.FINISHED:
-
-                # Get gaze position from eyetracker or mouse
-                gaze_position = (0, 0)
-                if eyetracker is not None:
-                    gaze_position = eyetracker.getCurrentGazePosition()
-                    gaze_position=(0.5*(gaze_position[0]+gaze_position[2]), 0.5*(gaze_position[1]+gaze_position[3]))
-                elif mouse is not None:
-                    gaze_position = mouse.getPos()
-
-                # Check if looking at face
-                if fixation_within_tolerance(gaze_position, self.init_frame.pos, 10, self.win):
-                    attending_frames += 1
-                    if attending_frames == 1:
-                        self.win.callOnFlip(send_event, ns, eyetracker, 'att2', 'attn face',
-                                            {'code': self.code,
-                                             'attn': self.attention,
-                                             'gaze': self.gaze,
-                                             'actr': self.actor})
-                else:
-                    attending_frames = 0
-
-                # Draw video frames and stimuli
-                self.video_stim.stim.draw()
-                for image in self.images.values():
-                    image.draw()
-
-                draw_eye_debug(eyetracker, gaze_debug, mouse)
-
-                self.win.flip()
+            self.play_movie(ns, eyetracker, mouse, gaze_debug)
 
 
 class Block:
@@ -471,6 +482,6 @@ class PreferentialGaze:
         for i in range(self.duration_frames):
             for actor in self.actors:
                 actor.stim.draw()
-            draw_eye_debug(eyetracker, gaze_debug, mouse)
+            draw_eye_debug(gaze_debug, eyetracker, mouse)
             self.win.flip()
         send_event(ns, eyetracker, 'pgen', "pg end", {'left': left_actor, 'right': right_actor})
