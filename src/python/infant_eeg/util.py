@@ -41,10 +41,13 @@ def fixation_within_tolerance(gaze_position, position, tolerance, win):
 
 def draw_eye_debug(gaze_debug, eyetracker, mouse):
     if gaze_debug is not None:
+        gaze_position=None
         if eyetracker is not None:
             gaze_position = eyetracker.getCurrentGazePosition()
-            gaze_position=(0.5*(gaze_position[0]+gaze_position[2]), 0.5*(gaze_position[1]+gaze_position[3]))
+            if gaze_position[0] is not None:
+                gaze_position=(0.5*(gaze_position[0]+gaze_position[2]), 0.5*(gaze_position[1]+gaze_position[3]))
         elif mouse is not None:
             gaze_position = mouse.getPos()
-        gaze_debug.setPos(gaze_position)
-        gaze_debug.draw()
+        if gaze_position[0] is not None:
+            gaze_debug.setPos(gaze_position)
+            gaze_debug.draw()

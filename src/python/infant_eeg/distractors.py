@@ -76,9 +76,3 @@ class DistractorSet:
                 self.reward_image.draw()
                 self.win.flip()
                 all_keys = event.getKeys()
-
-            if all_keys[0].upper() == 'C':
-                return True
-        elif this_key == 'C':
-            return True
-        return False

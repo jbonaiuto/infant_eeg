@@ -42,11 +42,8 @@ class GazeFollowingExperiment(Experiment):
         # Run blocks
         for block_name in self.block_order:
 
-            # User selected to calibrate
-            if self.distractor_set.run() and self.eye_tracker is not None:
-                self.eye_tracker.stopTracking()
-                self.calibrate_eyetracker()
-                self.eye_tracker.startTracking()
+            # Show distractors
+            self.distractor_set.run()
 
             # Run block
             if not self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug):
@@ -86,8 +83,8 @@ class GazeFollowingExperiment(Experiment):
             actor_images.append(ActorImage(self.win, actor_name, filename))
         self.preferential_gaze = PreferentialGaze(self.win, actor_images,
                                                   int(preferential_gaze_duration / self.mean_ms_per_frame))
-        self.congruent_actor = self.exp_info['congruent_actor']
-        self.incongruent_actor = self.exp_info['incongruent_actor']
+        self.congruent_actor = self.exp_info['congruent actor']
+        self.incongruent_actor = self.exp_info['incongruent actor']
 
         # Read block info
         blocks_node = root_element.find('blocks')
@@ -246,6 +243,8 @@ class Trial:
                 if highlight_on:
                     self.highlight.draw()
 
+            draw_eye_debug(gaze_debug, eyetracker, mouse)
+
             self.win.flip()
             idx += 1
 
@@ -253,16 +252,14 @@ class Trial:
             gaze_position = (0, 0)
             if eyetracker is not None:
                 gaze_position = eyetracker.getCurrentGazePosition()
-                gaze_position = (
-                0.5 * (gaze_position[0] + gaze_position[2]), 0.5 * (gaze_position[1] + gaze_position[3]))
+                gaze_position = (0.5 * (gaze_position[0] + gaze_position[2]),
+                                 0.5 * (gaze_position[1] + gaze_position[3]))
             elif mouse is not None:
                 gaze_position = mouse.getPos()
 
-            draw_eye_debug(gaze_debug, eyetracker, mouse)
-
             # Check if looking at right stimulus
             if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
-                self.images[self.attention].size[0], self.win):
+                self.images[self.attention].size[0]/2.0, self.win):
                 attending_frames += 1
                 if attending_frames == 1:
                     self.win.callOnFlip(send_event, ns, eyetracker, 'att1', 'attn stim',
@@ -290,6 +287,7 @@ class Trial:
             self.video_stim.stim.draw()
             for image in self.images.values():
                 image.draw()
+            draw_eye_debug(gaze_debug, eyetracker, mouse)
 
             self.win.flip()
 
@@ -297,12 +295,10 @@ class Trial:
             gaze_position = (0, 0)
             if eyetracker is not None:
                 gaze_position = eyetracker.getCurrentGazePosition()
-                gaze_position = (
-                0.5 * (gaze_position[0] + gaze_position[2]), 0.5 * (gaze_position[1] + gaze_position[3]))
+                gaze_position = (0.5 * (gaze_position[0] + gaze_position[2]),
+                                 0.5 * (gaze_position[1] + gaze_position[3]))
             elif mouse is not None:
                 gaze_position = mouse.getPos()
-
-            draw_eye_debug(gaze_debug, eyetracker, mouse)
 
             # Check if looking at face
             if fixation_within_tolerance(gaze_position, self.init_frame.pos, 10, self.win):

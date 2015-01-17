@@ -81,7 +81,7 @@ class Experiment:
             self.mouse = event.Mouse(win=self.win)
 
         self.gaze_debug=None
-        if self.exp_info['debug']:
+        if self.exp_info['debug mode']:
             self.gaze_debug=psychopy.visual.Circle(self.win, radius=1, fillColor=(1.0,0.0,0.0))
 
         self.read_xml(file_name)
@@ -138,13 +138,12 @@ class Experiment:
             except:
                 print('Could not connect with NetStation!')
 
-        # Calibrate eyetracker
+        # Initialize eyetracker
         if self.eye_tracker is not None:
             eyetracking_logfile = os.path.join(DATA_DIR, 'logs', '%s_%s_%s.log' % (self.exp_info['child_id'],
                                                                                    self.exp_info['date'],
                                                                                    self.exp_info['session']))
             self.eye_tracker.setDataFile(eyetracking_logfile, self.exp_info)
-            self.calibrate_eyetracker()
 
         # Create random block order
         n_repeats = int(self.num_blocks/len(self.blocks.keys()))

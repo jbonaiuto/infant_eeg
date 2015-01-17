@@ -20,11 +20,8 @@ class FacialMovementExperiment(Experiment):
         # Run blocks
         for block_name in self.block_order:
 
-            # User requested to run calibration
-            if self.distractor_set.run() and self.eye_tracker is not None:
-                self.eye_tracker.stopTracking()
-                self.calibrate_eyetracker()
-                self.eye_tracker.startTracking()
+            # Show distractors
+            self.distractor_set.run()
 
             # Run block
             if not self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug):

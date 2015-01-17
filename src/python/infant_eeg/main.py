@@ -15,18 +15,18 @@ if __name__ == '__main__':
         'gender': '',
         'experimenter_id': '',
         'experiment': ['FacialMovement','GazeFollowing'],
-        'congruent_actor': ['CG', 'FO'],
-        'incongruent_actor': ['CG', 'FO'],
+        'congruent actor': ['CG', 'FO'],
+        'incongruent actor': ['CG', 'FO'],
         'eeg': True,
         'eyetracking source': ['tobii', 'mouse', 'none'],
-        'debug': False
+        'debug mode': False
     }
 
     #present a dialogue to change params
     dlg = gui.DlgFromDict(
         expInfo,
-        order=['experiment','experimenter_id','date','child_id','gender','diagnosis','age','session','congruent_actor',
-               'incongruent_actor','eeg', 'eye tracking_source','debug mode'],
+        order=['experiment','experimenter_id','date','child_id','gender','diagnosis','age','session','congruent actor',
+               'incongruent actor','eeg', 'eyetracking source','debug mode'],
         title='Experiment Settings',
         fixed=['dateStr']
     )
