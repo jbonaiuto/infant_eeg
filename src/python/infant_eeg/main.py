@@ -4,7 +4,7 @@ import os
 from psychopy import data, gui
 from infant_eeg.config import CONF_DIR
 
-if __name__=='__main__':
+if __name__ == '__main__':
     # experiment parameters
     expInfo = {
         'child_id': '',
@@ -18,25 +18,24 @@ if __name__=='__main__':
         'congruent_actor': ['CG', 'FO'],
         'incongruent_actor': ['CG', 'FO'],
         'eeg': True,
-        'eye tracking': False,
-        'debug mode': False
+        'eyetracking source': ['tobii', 'mouse', 'none'],
+        'debug': False
     }
 
     #present a dialogue to change params
     dlg = gui.DlgFromDict(
         expInfo,
         order=['experiment','experimenter_id','date','child_id','gender','diagnosis','age','session','congruent_actor',
-               'incongruent_actor','eeg', 'eye tracking','debug mode'],
+               'incongruent_actor','eeg', 'eye tracking_source','debug mode'],
         title='Experiment Settings',
         fixed=['dateStr']
     )
     if dlg.OK:
-        # run task
-        exp=None
-        if expInfo['experiment']=='FacialMovement':
-            exp=FacialMovementExperiment(expInfo,os.path.join(CONF_DIR,'facial_movement_experiment.xml'))
-        elif expInfo['experiment']=='GazeFollowing':
-            exp=GazeFollowingExperiment(expInfo,os.path.join(CONF_DIR,'gaze_following_experiment.xml'))
+        # run experiment
+        exp = None
+        if expInfo['experiment'] == 'FacialMovement':
+            exp = FacialMovementExperiment(expInfo, os.path.join(CONF_DIR, 'facial_movement_experiment.xml'))
+        elif expInfo['experiment'] == 'GazeFollowing':
+            exp = GazeFollowingExperiment(expInfo, os.path.join(CONF_DIR, 'gaze_following_experiment.xml'))
         if exp is not None:
             exp.run()
-
