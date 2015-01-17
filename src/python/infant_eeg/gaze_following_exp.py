@@ -56,14 +56,8 @@ class GazeFollowingExperiment(Experiment):
             actor_images.append(ActorImage(self.win, actor_name, filename))
         self.preferential_gaze = PreferentialGaze(self.win, actor_images,
                                                   int(preferential_gaze_duration / self.mean_ms_per_frame))
-        if np.random.rand() < 0.5:
-            self.congruent_actor = actor_images[0].actor
-            self.incongruent_actor = actor_images[1].actor
-        else:
-            self.congruent_actor = actor_images[1].actor
-            self.incongruent_actor = actor_images[0].actor
-        self.exp_info['congruent_actor']=self.congruent_actor
-        self.exp_info['incongruent_actor']=self.incongruent_actor
+        self.congruent_actor = self.exp_info['congruent_actor']
+        self.incongruent_actor = self.exp_info['incongruent_actor']
 
         blocks_node = root_element.find('blocks')
         block_nodes = blocks_node.findall('block')
@@ -176,12 +170,19 @@ class Trial:
                              'gaze': self.gaze,
                              'actr': self.actor})
         while attending_frames < self.min_attending_frames and idx<self.max_attending_frames:
+            self.init_frame.draw()
+            for image in self.images.values():
+                image.draw()
+            if not idx % 3 == 0:
+                self.highlight.draw()
+            self.win.flip()
+
             if eyetracker is not None:
                 gaze_position = eyetracker.getCurrentGazePosition()
             else:
                 gaze_position = mouse.getPos()
             if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
-                                         self.images[self.attention].size[0], self.win):
+                self.images[self.attention].size[0], self.win):
                 attending_frames += 1
                 if attending_frames==1:
                     self.win.callOnFlip(sendEvent, ns, eyetracker, 'att1', 'attn stim',
@@ -191,12 +192,7 @@ class Trial:
                          'actr': self.actor})
             else:
                 attending_frames = 0
-            self.init_frame.draw()
-            for image in self.images.values():
-                image.draw()
-            if not idx % 3 == 0:
-                self.highlight.draw()
-            self.win.flip()
+
             idx += 1
 
         if attending_frames >= self.min_attending_frames:
@@ -208,6 +204,11 @@ class Trial:
             attending_frames = 0
             attended_face=False
             while not self.video_stim.stim.status == visual.FINISHED:
+                self.video_stim.stim.draw()
+                for image in self.images.values():
+                    image.draw()
+                self.win.flip()
+
                 if eyetracker is not None:
                     gaze_position = eyetracker.getCurrentGazePosition()
                 else:
@@ -224,10 +225,6 @@ class Trial:
                          'gaze': self.gaze,
                          'actr': self.actor})
                     attended_face=True
-                self.video_stim.stim.draw()
-                for image in self.images.values():
-                    image.draw()
-                self.win.flip()
 
 
 class Block:
