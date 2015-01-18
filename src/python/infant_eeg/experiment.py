@@ -86,6 +86,9 @@ class Experiment:
 
         self.read_xml(file_name)
 
+        # Initialize netstation and eyetracker
+        self.initialize()
+
     def calibrate_eyetracker(self):
         """
         Run eyetracker calibration routine
@@ -151,6 +154,10 @@ class Experiment:
             subblock_order = copy.copy(self.blocks.keys())
             np.random.shuffle(subblock_order)
             self.block_order.extend(subblock_order)
+
+        # Synch with netstation in between trials
+        if self.ns is not None:
+            self.ns.sync()
 
         if self.eye_tracker is not None:
             self.eye_tracker.startTracking()

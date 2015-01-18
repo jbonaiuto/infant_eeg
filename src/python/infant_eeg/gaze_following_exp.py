@@ -31,9 +31,6 @@ class GazeFollowingExperiment(Experiment):
         Run experiment
         """
 
-        # Initialize netstation and eyetracker
-        self.initialize()
-
         # Run preferential gaze trials
         for i in range(self.preferential_gaze_trials):
             self.preferential_gaze.run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug)
@@ -321,7 +318,6 @@ class Trial:
             else:
                 if gaze_debug is not None:
                     gaze_debug.fillColor=(1,-1,-1)
-                attending_frames = 0
         if gaze_debug is not None:
             gaze_debug.fillColor=(1,-1,-1)
 

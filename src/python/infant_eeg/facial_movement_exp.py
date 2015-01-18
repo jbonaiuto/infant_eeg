@@ -15,7 +15,6 @@ class FacialMovementExperiment(Experiment):
         """
         Run task
         """
-        self.initialize()
 
         # Run blocks
         for block_name in self.block_order:
