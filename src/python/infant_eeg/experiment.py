@@ -1,10 +1,10 @@
+import sys
 # Import AVbin first
 if sys.platform == 'win32':
     import ctypes
     avbin_lib = ctypes.cdll.LoadLibrary('avbin')
     import psychopy.visual
 import copy
-import sys
 import datetime
 from psychopy.visual import Window
 from psychopy import visual, core, event
