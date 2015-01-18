@@ -1,10 +1,11 @@
-import copy
-import sys
 # Import AVbin first
 if sys.platform == 'win32':
     import ctypes
     avbin_lib = ctypes.cdll.LoadLibrary('avbin')
     import psychopy.visual
+import copy
+import sys
+import datetime
 from psychopy.visual import Window
 from psychopy import visual, core, event
 import numpy as np
@@ -141,12 +142,21 @@ class Experiment:
             except:
                 print('Could not connect with NetStation!')
 
-        # Initialize eyetracker
+        # Initialize logging
+        logfile = os.path.join(DATA_DIR, 'logs', '%s_%s_%s.log' % (self.exp_info['child_id'],
+                                                                       self.exp_info['date'],
+                                                                       self.exp_info['session']))
+
         if self.eye_tracker is not None:
-            eyetracking_logfile = os.path.join(DATA_DIR, 'logs', '%s_%s_%s.log' % (self.exp_info['child_id'],
-                                                                                   self.exp_info['date'],
-                                                                                   self.exp_info['session']))
-            self.eye_tracker.setDataFile(eyetracking_logfile, self.exp_info)
+            self.eye_tracker.setDataFile(logfile, self.exp_info)
+        else:
+            datafile = open(logfile, 'w')
+            datafile.write('Recording date:\t' + datetime.datetime.now().strftime('%Y/%m/%d') + '\n')
+            datafile.write('Recording time:\t' + datetime.datetime.now().strftime('%H:%M:%S') + '\n')
+            datafile.write('Recording resolution\t%d x %d\n' % tuple(self.win.size))
+            for key, data in self.exp_info.iteritems():
+                datafile.write('%s:\t%s\n' % (key, data))
+            datafile.close()
 
         # Create random block order
         n_repeats = int(self.num_blocks/len(self.blocks.keys()))
