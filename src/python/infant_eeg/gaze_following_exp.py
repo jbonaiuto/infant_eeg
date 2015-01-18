@@ -24,36 +24,86 @@ class GazeFollowingExperiment(Experiment):
         self.preferential_gaze_trials = 1
         self.congruent_actor = None
         self.incongruent_actor = None
+        self.videos = {}
+        self.video_init_frames = {}
+
         Experiment.__init__(self, exp_info, file_name)
+
+    def pause(self):
+        """
+        Pause block
+        """
+        event.clearEvents()
+        self.win.flip()
+        event.waitKeys()
 
     def run(self):
         """
         Run experiment
         """
 
+        cont = True
+
         # Run preferential gaze trials
         for i in range(self.preferential_gaze_trials):
-            self.preferential_gaze.run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug)
             self.distractor_set.run()
+
+            # clear any keystrokes before starting
+            event.clearEvents()
+
+            self.preferential_gaze.run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug)
+
+            # Check user input
+            all_keys = event.getKeys()
+            if len(all_keys):
+                # Quit experiment
+                if all_keys[0].upper() in ['Q', 'ESCAPE']:
+                    cont=False
+                    break
+                # Pause block
+                elif all_keys[0].upper() == 'P':
+                    self.pause()
+                # End block
+                elif all_keys[0].upper() == 'E':
+                    break
+                event.clearEvents()
 
         # Run blocks
-        for block_name in self.block_order:
+        if cont:
+            for block_name in self.block_order:
 
-            # Show distractors
-            self.distractor_set.run()
+                # Show distractors
+                self.distractor_set.run()
 
-            # Run block
-            if not self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug):
-                break
+                # Run block
+                if not self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug):
+                    cont = False
+                    break
 
-            # Write eytracking data to file
-            if self.eye_tracker is not None:
-                self.eye_tracker.flushData()
+                # Write eytracking data to file
+                if self.eye_tracker is not None:
+                    self.eye_tracker.flushData()
 
         # Run preferential gaze trials
-        for i in range(self.preferential_gaze_trials):
-            self.preferential_gaze.run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug)
-            self.distractor_set.run()
+        if cont:
+            for i in range(self.preferential_gaze_trials):
+                self.distractor_set.run()
+
+                # clear any keystrokes before starting
+                event.clearEvents()
+
+                self.preferential_gaze.run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug)
+
+                # Check user input
+                all_keys = event.getKeys()
+                if len(all_keys):
+                    # Quit experiment
+                    if all_keys[0].upper() in ['Q', 'ESCAPE'] or all_keys[0].upper()=='E':
+                        break
+                    # Pause block
+                    elif all_keys[0].upper() == 'P':
+                        self.pause()
+                    event.clearEvents()
 
         # End experiment
         self.close()
@@ -83,6 +133,28 @@ class GazeFollowingExperiment(Experiment):
         self.congruent_actor = self.exp_info['congruent actor']
         self.incongruent_actor = self.exp_info['incongruent actor']
 
+        # Read video info
+        videos_node = root_element.find('videos')
+        video_nodes = videos_node.findall('video')
+        for video_node in video_nodes:
+            direction = video_node.attrib['direction']
+            actor = video_node.attrib['actor']
+            file_name = video_node.attrib['file_name']
+            init_frame = video_node.attrib['init_frame']
+            shuffled = int(video_node.attrib['shuffled'])
+            if not actor in self.videos:
+                self.videos[actor] = {}
+                self.video_init_frames[actor] = {}
+            if not direction in self.videos[actor]:
+                self.videos[actor][direction] = {}
+                self.video_init_frames[actor][direction] = {}
+            self.videos[actor][direction][shuffled] = MovieStimulus(self.win, direction, actor, file_name)
+            self.video_init_frames[actor][direction][shuffled] = visual.ImageStim(self.win,
+                                                                                  os.path.join(DATA_DIR, 'images',
+                                                                                               init_frame),
+                                                                                  units='pix', size=(900, 720))
+            self.video_init_frames[actor][direction][shuffled].size *= 1.25
+
         # Read block info
         blocks_node = root_element.find('blocks')
         block_nodes = blocks_node.findall('block')
@@ -104,23 +176,6 @@ class GazeFollowingExperiment(Experiment):
 
             block = Block(block_name, num_trials, min_iti_frames, max_iti_frames, self.win)
 
-            # Read video info
-            videos_node = block_node.find('videos')
-            video_nodes = videos_node.findall('video')
-            for video_node in video_nodes:
-                direction = video_node.attrib['direction']
-                actor = video_node.attrib['actor']
-                file_name = video_node.attrib['file_name']
-                init_frame = video_node.attrib['init_frame']
-                if not actor in block.videos:
-                    block.videos[actor] = {}
-                    block.video_init_frames[actor] = {}
-                block.videos[actor][direction] = MovieStimulus(self.win, direction, actor, file_name)
-                block.video_init_frames[actor][direction] = visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images',
-                                                                                                    init_frame),
-                                                                             units='pix', size=(900, 720))
-                block.video_init_frames[actor][direction].size*=1.25
-
             # Read trial info
             trials_node = block_node.find('trials')
             trial_nodes = trials_node.findall('trial')
@@ -130,22 +185,23 @@ class GazeFollowingExperiment(Experiment):
                 right_image = trial_node.attrib['right_image']
                 attention = trial_node.attrib['attention']
                 gaze = trial_node.attrib['gaze']
+                shuffled = int(trial_node.attrib['shuffled'])
                 if gaze == 'cong':
                     actor = self.congruent_actor
                 else:
                     actor = self.incongruent_actor
                 trial = Trial(self.win, code, init_stim_frames, min_attending_frames, max_attending_frames, left_image,
-                              right_image, attention, gaze, actor)
+                              right_image, attention, gaze, actor, shuffled)
                 if trial.gaze == 'cong':
-                    trial.init_frame = block.video_init_frames[self.congruent_actor][trial.attention]
-                    trial.video_stim = block.videos[self.congruent_actor][trial.attention]
+                    trial.init_frame = self.video_init_frames[self.congruent_actor][trial.attention][shuffled]
+                    trial.video_stim = self.videos[self.congruent_actor][trial.attention][shuffled]
                 else:
                     if trial.attention == 'l':
-                        trial.init_frame = block.video_init_frames[self.incongruent_actor]['r']
-                        trial.video_stim = block.videos[self.incongruent_actor]['r']
+                        trial.init_frame = self.video_init_frames[self.incongruent_actor]['r'][shuffled]
+                        trial.video_stim = self.videos[self.incongruent_actor]['r'][shuffled]
                     else:
-                        trial.init_frame = block.video_init_frames[self.incongruent_actor]['l']
-                        trial.video_stim = block.videos[self.incongruent_actor]['l']
+                        trial.init_frame = self.video_init_frames[self.incongruent_actor]['l'][shuffled]
+                        trial.video_stim = self.videos[self.incongruent_actor]['l'][shuffled]
                 block.trials.append(trial)
             self.blocks[block_name] = block
 
@@ -157,7 +213,7 @@ class Trial:
     """
 
     def __init__(self, win, code, init_stim_frames, min_attending_frames, max_attending_frames, left_image, right_image,
-                 attention, gaze, actor):
+                 attention, gaze, actor, shuffled):
         """
         Initialize class
         :param win - window to use
@@ -180,8 +236,8 @@ class Trial:
             'l': visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images', left_image)),
             'r': visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images', right_image))
         }
-        self.images['l'].size*=.95
-        self.images['r'].size*=.95
+        self.images['l'].size *= .95
+        self.images['r'].size *= .95
         self.images['l'].pos = [-22, 0]
         self.images['r'].pos = [22, 0]
         self.highlight = visual.Rect(self.win, width=self.images['l'].size[0] + 1, height=self.images['r'].size[1] + 1)
@@ -192,14 +248,18 @@ class Trial:
         self.init_frame = None
         self.video_stim = None
         self.actor = actor
+        self.shuffled=shuffled
+        self.code_table = {
+            'code': self.code,
+            'attn': self.attention,
+            'gaze': self.gaze,
+            'shuf': self.shuffled,
+            'actr': str(self.actor)
+        }
 
     def show_init_stimulus(self, ns, eyetracker, mouse, gaze_debug):
         # Show two stimuli and initial frame of movie
-        self.win.callOnFlip(send_event, ns, eyetracker, 'ima1', 'stim start',
-            {'code': self.code,
-             'attn': self.attention,
-             'gaze': self.gaze,
-             'actr': self.actor})
+        self.win.callOnFlip(send_event, ns, eyetracker, 'ima1', 'stim start', self.code_table)
         for i in range(self.init_stim_frames):
             self.init_frame.draw()
             for image in self.images.values():
@@ -214,11 +274,7 @@ class Trial:
         attending_frames = 0
         highlight_on = False
         idx = 0
-        self.win.callOnFlip(send_event, ns, eyetracker, 'ima2', 'attn start',
-            {'code': self.code,
-             'attn': self.attention,
-             'gaze': self.gaze,
-             'actr': self.actor})
+        self.win.callOnFlip(send_event, ns, eyetracker, 'ima2', 'attn start', self.code_table)
         while attending_frames < self.min_attending_frames and idx < self.max_attending_frames:
             # Draw init frame of movie and two stimuli
             self.init_frame.draw()
@@ -260,14 +316,10 @@ class Trial:
 
             # Check if looking at right stimulus
             if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
-                self.images[self.attention].size[0]/2.0, self.win):
+                                         self.images[self.attention].size[0] / 2.0+2, self.win):
                 attending_frames += 1
                 if attending_frames == 1:
-                    self.win.callOnFlip(send_event, ns, eyetracker, 'att1', 'attn stim',
-                        {'code': self.code,
-                         'attn': self.attention,
-                         'gaze': self.gaze,
-                         'actr': self.actor})
+                    self.win.callOnFlip(send_event, ns, eyetracker, 'att1', 'attn stim', self.code_table)
             else:
                 attending_frames = 0
 
@@ -278,11 +330,7 @@ class Trial:
         self.images['r'].pos = [22, 0]
 
         # Play movie
-        self.win.callOnFlip(send_event, ns, eyetracker, 'mov1', 'movie start',
-            {'code': self.code,
-             'attn': self.attention,
-             'gaze': self.gaze,
-             'actr': self.actor})
+        self.win.callOnFlip(send_event, ns, eyetracker, 'mov1', 'movie start', self.code_table)
 
         attending_frames = 0
         while not self.video_stim.stim.status == visual.FINISHED:
@@ -307,19 +355,15 @@ class Trial:
             # Check if looking at face
             if fixation_within_tolerance(gaze_position, self.init_frame.pos, 10, self.win):
                 if gaze_debug is not None:
-                    gaze_debug.fillColor=(-1,-1,1)
+                    gaze_debug.fillColor = (-1, -1, 1)
                 attending_frames += 1
                 if attending_frames == 1:
-                    self.win.callOnFlip(send_event, ns, eyetracker, 'att2', 'attn face',
-                        {'code': self.code,
-                         'attn': self.attention,
-                         'gaze': self.gaze,
-                         'actr': self.actor})
+                    self.win.callOnFlip(send_event, ns, eyetracker, 'att2', 'attn face', self.code_table)
             else:
                 if gaze_debug is not None:
-                    gaze_debug.fillColor=(1,-1,-1)
+                    gaze_debug.fillColor = (1, -1, -1)
         if gaze_debug is not None:
-            gaze_debug.fillColor=(1,-1,-1)
+            gaze_debug.fillColor = (1, -1, -1)
 
     def run(self, ns, eyetracker, mouse, gaze_debug):
         """
@@ -358,8 +402,6 @@ class Block:
         self.win = win
         self.min_iti_frames = min_iti_frames
         self.max_iti_frames = max_iti_frames
-        self.videos = {}
-        self.video_init_frames = {}
         self.trials = []
 
     def pause(self):
@@ -442,7 +484,7 @@ class ActorImage:
         self.actor = actor
         self.filename = filename
         self.stim = visual.ImageStim(win, os.path.join(DATA_DIR, 'images', self.filename))
-        self.stim.size*=1.5
+        self.stim.size *= 1.5
 
 
 class PreferentialGaze:
