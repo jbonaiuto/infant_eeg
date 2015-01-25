@@ -389,9 +389,11 @@ class TobiiController:
         self.datafile.write('\t'.join(['TimeStamp',
                                        'GazePointXLeft',
                                        'GazePointYLeft',
+                                       'PupilLeft',
                                        'ValidityLeft',
                                        'GazePointXRight',
                                        'GazePointYRight',
+                                       'PupilRight'
                                        'ValidityRight',
                                        'GazePointX',
                                        'GazePointY',
@@ -419,13 +421,15 @@ class TobiiController:
 
         timeStampStart = self.gazeData[0].Timestamp
         for g in self.gazeData:
-            self.datafile.write('%.1f\t%.4f\t%.4f\t%d\t%.4f\t%.4f\t%d' % (
+            self.datafile.write('%.1f\t%.4f\t%.4f\t%.4f\t%d\t%.4f\t%.4f\t%.4f\t%d' % (
                 (g.Timestamp - timeStampStart) / 1000.0,
                 g.LeftGazePoint2D.x * self.win.size[0] if g.LeftValidity != 4 else -1.0,
                 g.LeftGazePoint2D.y * self.win.size[1] if g.LeftValidity != 4 else -1.0,
+                g.LeftPupil,
                 g.LeftValidity,
                 g.RightGazePoint2D.x * self.win.size[0] if g.RightValidity != 4 else -1.0,
                 g.RightGazePoint2D.y * self.win.size[1] if g.RightValidity != 4 else -1.0,
+                g.RightPupil,
                 g.RightValidity))
             if g.LeftValidity == 4 and g.RightValidity == 4:  #not detected
                 ave = (-1.0, -1.0)
@@ -440,7 +444,7 @@ class TobiiController:
             self.datafile.write('\t%.4f\t%.4f\t' % ave)
             self.datafile.write('\n')
 
-        formatstr = '%.1f' + '\t' * 9 + '%s\n'
+        formatstr = '%.1f' + '\t' * 11 + '%s\n'
         for t, (e, label, table) in self.eventData:
             tablestr=','.join('%s:%s' % (key, val) for key, val in table.iteritems())
             eventstr = '%s,%s,%s' % (e, label, tablestr)
