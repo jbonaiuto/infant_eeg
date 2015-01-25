@@ -23,8 +23,12 @@ class FacialMovementExperiment(Experiment):
             self.distractor_set.run()
 
             # Run block
-            if not self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug):
-                break
+            resp=self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug,
+                                             self.distractor_set)
+            if len(resp):
+                # Quit experiment
+                if resp[0].upper() in ['Q', 'ESCAPE']:
+                    break
 
             # Write eyetracker data to file
             if self.eye_tracker is not None:
@@ -95,7 +99,7 @@ class Block:
         self.win.flip()
         event.waitKeys()
 
-    def run(self, ns, eyetracker, mouse, gaze_debug):
+    def run(self, ns, eyetracker, mouse, gaze_debug, distractor_set):
         """
         Run the block
         :param ns: connection to netstation
@@ -145,18 +149,25 @@ class Block:
             # Tell netstation the movie has stopped
             send_event(ns, eyetracker, 'mov2', 'movie end', {})
 
-            # Read user input
+            # Check user input
             all_keys = event.getKeys()
             if len(all_keys):
-                # Quit task
+                # Quit experiment
                 if all_keys[0].upper() in ['Q', 'ESCAPE']:
-                    return False
+                    return all_keys[0].upper()
                 # Pause block
                 elif all_keys[0].upper() == 'P':
                     self.pause()
                 # End block
                 elif all_keys[0].upper() == 'E':
-                    break
+                    return all_keys[0].upper()
+                # Show distractors
+                elif all_keys[0].upper() == 'D':
+                    distractor_set.run()
+                # Show distractor video
+                elif all_keys[0].upper() == 'V':
+                    distractor_set.show_video()
+
                 event.clearEvents()
 
             # Black screen for delay
@@ -165,4 +176,4 @@ class Block:
 
         # Stop netstation recording
         send_event(ns, eyetracker, 'blk2', 'block end', {'code': self.code})
-        return True
+        return []
