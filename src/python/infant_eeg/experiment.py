@@ -60,6 +60,7 @@ class Experiment:
         # Initialize set of distractors
         self.distractor_set = DistractorSet(os.path.join(DATA_DIR, 'images', 'distractors', 'space'),
                                             os.path.join(DATA_DIR, 'sounds', 'distractors'),
+                                            os.path.join(DATA_DIR, 'movies', 'distractors'),
                                             os.path.join(DATA_DIR, 'images', 'distractors', 'star-cartoon.jpg'),
                                             distractor_duration_frames, self.win)
 
