@@ -26,6 +26,7 @@ class GazeFollowingExperiment(Experiment):
         self.incongruent_actor = None
         self.videos = {}
         self.video_init_frames = {}
+        self.init_video=None
 
         Experiment.__init__(self, exp_info, file_name)
 
@@ -37,14 +38,8 @@ class GazeFollowingExperiment(Experiment):
         self.win.flip()
         event.waitKeys()
 
-    def run(self):
-        """
-        Run experiment
-        """
-
-        cont = True
-
-        # Run preferential gaze trials
+    def run_preferential_gaze(self):
+        cont=True
         for i in range(self.preferential_gaze_trials):
             self.distractor_set.run()
 
@@ -58,7 +53,7 @@ class GazeFollowingExperiment(Experiment):
             if len(all_keys):
                 # Quit experiment
                 if all_keys[0].upper() in ['Q', 'ESCAPE']:
-                    cont=False
+                    cont = False
                     break
                 # Pause block
                 elif all_keys[0].upper() == 'P':
@@ -68,6 +63,18 @@ class GazeFollowingExperiment(Experiment):
                     break
                 event.clearEvents()
 
+        return cont
+
+    def run(self):
+        """
+        Run experiment
+        """
+
+        cont = True
+
+        # Run preferential gaze trials
+        cont = self.run_preferential_gaze()
+
         # Run blocks
         if cont:
             for block_name in self.block_order:
@@ -76,9 +83,16 @@ class GazeFollowingExperiment(Experiment):
                 self.distractor_set.run()
 
                 # Run block
-                if not self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug):
-                    cont = False
-                    break
+                resp=self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug,
+                                                 self.distractor_set)
+                if len(resp):
+                    # Quit experiment
+                    if resp[0].upper() in ['Q', 'ESCAPE']:
+                        cont=False
+                        break
+                    # Run preferential gaze
+                    elif resp[0].upper() == 'G':
+                        cont=self.run_preferential_gaze()
 
                 # Write eytracking data to file
                 if self.eye_tracker is not None:
@@ -86,24 +100,7 @@ class GazeFollowingExperiment(Experiment):
 
         # Run preferential gaze trials
         if cont:
-            for i in range(self.preferential_gaze_trials):
-                self.distractor_set.run()
-
-                # clear any keystrokes before starting
-                event.clearEvents()
-
-                self.preferential_gaze.run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug)
-
-                # Check user input
-                all_keys = event.getKeys()
-                if len(all_keys):
-                    # Quit experiment
-                    if all_keys[0].upper() in ['Q', 'ESCAPE'] or all_keys[0].upper()=='E':
-                        break
-                    # Pause block
-                    elif all_keys[0].upper() == 'P':
-                        self.pause()
-                    event.clearEvents()
+            self.run_preferential_gaze()
 
         # End experiment
         self.close()
@@ -117,6 +114,8 @@ class GazeFollowingExperiment(Experiment):
         self.name = root_element.attrib['name']
         self.type = root_element.attrib['type']
         self.num_blocks = int(root_element.attrib['num_blocks'])
+        init_video_file = root_element.attrib['init_video']
+        self.init_video=MovieStimulus(self.win, '', '', init_video_file)
 
         # Read prefential gaze trial info
         preferential_gaze_node = root_element.find('preferential_gaze')
@@ -192,6 +191,7 @@ class GazeFollowingExperiment(Experiment):
                     actor = self.incongruent_actor
                 trial = Trial(self.win, code, init_stim_frames, min_attending_frames, max_attending_frames, left_image,
                               right_image, attention, gaze, actor, shuffled)
+                trial.init_video_stim=self.init_video
                 if trial.gaze == 'cong':
                     trial.init_frame = self.video_init_frames[self.congruent_actor][trial.attention][shuffled]
                     trial.video_stim = self.videos[self.congruent_actor][trial.attention][shuffled]
@@ -247,6 +247,7 @@ class Trial:
         self.gaze = gaze
         self.init_frame = None
         self.video_stim = None
+        self.init_video_stim = None
         self.actor = actor
         self.shuffled=shuffled
         self.code_table = {
@@ -256,6 +257,13 @@ class Trial:
             'shuf': self.shuffled,
             'actr': str(self.actor)
         }
+
+    def show_init_video(self, ns, eyetracker, mouse, gaze_debug):
+        self.win.callOnFlip(send_event, ns, eyetracker, 'imov', 'init movie', self.code_table)
+        while not self.init_video_stim.stim.status == visual.FINISHED:
+            self.init_video_stim.stim.draw()
+            draw_eye_debug(gaze_debug, eyetracker, mouse)
+            self.win.flip()
 
     def show_init_stimulus(self, ns, eyetracker, mouse, gaze_debug):
         # Show two stimuli and initial frame of movie
@@ -374,7 +382,10 @@ class Trial:
         """
 
         # Reset movie to beginning
+        self.init_video_stim.reload(self.win)
         self.video_stim.reload(self.win)
+
+        self.show_init_video(ns, eyetracker, mouse, gaze_debug)
 
         self.show_init_stimulus(ns, eyetracker, mouse, gaze_debug)
 
@@ -412,7 +423,7 @@ class Block:
         self.win.flip()
         event.waitKeys()
 
-    def run(self, ns, eyetracker, mouse, gaze_debug):
+    def run(self, ns, eyetracker, mouse, gaze_debug, distractor_set):
         """
         Run the block
         :param ns - connection to netstation
@@ -452,13 +463,23 @@ class Block:
             if len(all_keys):
                 # Quit experiment
                 if all_keys[0].upper() in ['Q', 'ESCAPE']:
-                    return False
+                    return all_keys[0].upper()
                 # Pause block
                 elif all_keys[0].upper() == 'P':
                     self.pause()
                 # End block
                 elif all_keys[0].upper() == 'E':
-                    break
+                    return all_keys[0].upper()
+                # Show distractors
+                elif all_keys[0].upper() == 'D':
+                    distractor_set.run()
+                # Show distractor video
+                elif all_keys[0].upper() == 'V':
+                    distractor_set.show_video()
+                # Run preferential gaze
+                elif all_keys[0].upper() == 'G':
+                    return all_keys[0].upper()
+
                 event.clearEvents()
 
             # Black screen for delay
@@ -467,7 +488,7 @@ class Block:
 
         # Stop netstation recording
         send_event(ns, eyetracker, 'blk2', 'block end', {'code': self.code})
-        return True
+        return []
 
 
 class ActorImage:
