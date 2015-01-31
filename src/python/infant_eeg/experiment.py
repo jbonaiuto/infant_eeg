@@ -7,7 +7,7 @@ if sys.platform == 'win32':
 import copy
 import datetime
 from psychopy.visual import Window
-from psychopy import visual, core, event
+from psychopy import visual, core, event, monitors
 import numpy as np
 import egi.threaded as egi
 # Try to import tobii sdk
@@ -39,9 +39,10 @@ class Experiment:
 
         # Window to use
         wintype = 'pyglet'  # use pyglet if possible, it's faster at event handling
+        mon = monitors.Monitor(MONITOR, distance=float(exp_info['monitor distance']))
         self.win = Window(
             [1280, 1024],
-            monitor=MONITOR,
+            monitor=mon,
             screen=SCREEN,
             units="deg",
             fullscr=True,
