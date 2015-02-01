@@ -41,7 +41,7 @@ class GazeFollowingExperiment(Experiment):
     def run_preferential_gaze(self):
         cont=True
         for i in range(self.preferential_gaze_trials):
-            self.distractor_set.run()
+            self.distractor_set.show_video()
 
             # clear any keystrokes before starting
             event.clearEvents()
@@ -80,7 +80,7 @@ class GazeFollowingExperiment(Experiment):
             for block_name in self.block_order:
 
                 # Show distractors
-                self.distractor_set.run()
+                self.distractor_set.show_video()
 
                 # Run block
                 resp=self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug,
@@ -238,8 +238,8 @@ class Trial:
         }
         self.images['l'].size *= .95
         self.images['r'].size *= .95
-        self.images['l'].pos = [-22, 0]
-        self.images['r'].pos = [22, 0]
+        self.images['l'].pos = [-15, 0]
+        self.images['r'].pos = [15, 0]
         self.highlight = visual.Rect(self.win, width=self.images['l'].size[0] + 1, height=self.images['r'].size[1] + 1)
         self.highlight.lineColor = [1, -1, -1]
         self.highlight.lineWidth = 10
@@ -334,8 +334,8 @@ class Trial:
         return attending_frames
 
     def play_movie(self, ns, eyetracker, mouse, gaze_debug):
-        self.images['l'].pos = [-22, 0]
-        self.images['r'].pos = [22, 0]
+        self.images['l'].pos = [-15, 0]
+        self.images['r'].pos = [15, 0]
 
         # Play movie
         self.win.callOnFlip(send_event, ns, eyetracker, 'mov1', 'movie start', self.code_table)
@@ -472,10 +472,10 @@ class Block:
                     return all_keys[0].upper()
                 # Show distractors
                 elif all_keys[0].upper() == 'D':
-                    distractor_set.run()
-                # Show distractor video
-                elif all_keys[0].upper() == 'V':
                     distractor_set.show_video()
+                # # Show distractor video
+                # elif all_keys[0].upper() == 'V':
+                #     distractor_set.show_video()
                 # Run preferential gaze
                 elif all_keys[0].upper() == 'G':
                     return all_keys[0].upper()
@@ -536,13 +536,13 @@ class PreferentialGaze:
         left_actor = None
         right_actor = None
         if np.random.rand() < 0.5:
-            self.actors[0].stim.pos = [-15, 0]
-            self.actors[1].stim.pos = [15, 0]
+            self.actors[0].stim.pos = [-12, 0]
+            self.actors[1].stim.pos = [12, 0]
             left_actor = self.actors[0].actor
             right_actor = self.actors[1].actor
         else:
-            self.actors[0].stim.pos = [15, 0]
-            self.actors[1].stim.pos = [-15, 0]
+            self.actors[0].stim.pos = [12, 0]
+            self.actors[1].stim.pos = [-12, 0]
             left_actor = self.actors[1].actor
             right_actor = self.actors[0].actor
 

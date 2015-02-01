@@ -38,7 +38,7 @@ class DistractorSet:
 
         self.duration_frames = duration_frames
 
-    def run(self):
+    def show_pictures_and_sounds(self):
         """
         Run distractor set
             returns True if calibration requested

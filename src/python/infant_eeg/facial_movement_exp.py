@@ -20,7 +20,7 @@ class FacialMovementExperiment(Experiment):
         for block_name in self.block_order:
 
             # Show distractors
-            self.distractor_set.run()
+            self.distractor_set.show_pictures_and_sounds()
 
             # Run block
             resp=self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug,
@@ -163,7 +163,7 @@ class Block:
                     return all_keys[0].upper()
                 # Show distractors
                 elif all_keys[0].upper() == 'D':
-                    distractor_set.run()
+                    distractor_set.show_pictures_and_sounds()
                 # Show distractor video
                 elif all_keys[0].upper() == 'V':
                     distractor_set.show_video()
