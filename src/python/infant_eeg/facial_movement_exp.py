@@ -65,9 +65,10 @@ class FacialMovementExperiment(Experiment):
             videos_node = block_node.find('videos')
             video_nodes = videos_node.findall('video')
             for video_node in video_nodes:
+                size=(int(video_node.attrib['width_degrees']), int(video_node.attrib['height_degrees']))
                 self.blocks[block_name].stimuli.append(MovieStimulus(self.win, video_node.attrib['movement'],
                                                                      video_node.attrib['actor'],
-                                                                     video_node.attrib['file_name']))
+                                                                     video_node.attrib['file_name'], size))
 
 
 class Block:
