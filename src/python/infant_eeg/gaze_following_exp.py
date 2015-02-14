@@ -115,7 +115,8 @@ class GazeFollowingExperiment(Experiment):
         self.type = root_element.attrib['type']
         self.num_blocks = int(root_element.attrib['num_blocks'])
         init_video_file = root_element.attrib['init_video']
-        self.init_video=MovieStimulus(self.win, '', '', init_video_file)
+        size=(float(root_element.attrib['init_video_width_degrees']),float(root_element.attrib['init_video_height_degrees']))
+        self.init_video=MovieStimulus(self.win, '', '', init_video_file, size)
 
         # Read prefential gaze trial info
         preferential_gaze_node = root_element.find('preferential_gaze')
@@ -126,7 +127,8 @@ class GazeFollowingExperiment(Experiment):
         for actor_node in actor_nodes:
             actor_name = actor_node.attrib['name']
             filename = actor_node.attrib['file_name']
-            actor_images.append(ActorImage(self.win, actor_name, filename))
+            size=(float(actor_node.attrib['width_degrees']),float(actor_node.attrib['height_degrees']))
+            actor_images.append(ActorImage(self.win, actor_name, filename, size))
         self.preferential_gaze = PreferentialGaze(self.win, actor_images,
                                                   int(preferential_gaze_duration / self.mean_ms_per_frame))
         self.congruent_actor = self.exp_info['congruent actor']
@@ -141,18 +143,19 @@ class GazeFollowingExperiment(Experiment):
             file_name = video_node.attrib['file_name']
             init_frame = video_node.attrib['init_frame']
             shuffled = int(video_node.attrib['shuffled'])
+            size=(float(video_node.attrib['width_degrees']), float(video_node.attrib['height_degrees']))
             if not actor in self.videos:
                 self.videos[actor] = {}
                 self.video_init_frames[actor] = {}
             if not direction in self.videos[actor]:
                 self.videos[actor][direction] = {}
                 self.video_init_frames[actor][direction] = {}
-            self.videos[actor][direction][shuffled] = MovieStimulus(self.win, direction, actor, file_name)
+            self.videos[actor][direction][shuffled] = MovieStimulus(self.win, direction, actor, file_name,
+                                                                    size)
             self.video_init_frames[actor][direction][shuffled] = visual.ImageStim(self.win,
                                                                                   os.path.join(DATA_DIR, 'images',
                                                                                                init_frame),
-                                                                                  units='pix', size=(900, 720))
-            self.video_init_frames[actor][direction][shuffled].size *= 1.25
+                                                                                  units='deg', size=size)
 
         # Read block info
         blocks_node = root_element.find('blocks')
@@ -185,12 +188,14 @@ class GazeFollowingExperiment(Experiment):
                 attention = trial_node.attrib['attention']
                 gaze = trial_node.attrib['gaze']
                 shuffled = int(trial_node.attrib['shuffled'])
+                image_size=(float(trial_node.attrib['width_degrees']),float(trial_node.attrib['height_degrees']))
+                peripheral_offset=int(trial_node.attrib['peripheral_offset'])
                 if gaze == 'cong':
                     actor = self.congruent_actor
                 else:
                     actor = self.incongruent_actor
                 trial = Trial(self.win, code, init_stim_frames, min_attending_frames, max_attending_frames, left_image,
-                              right_image, attention, gaze, actor, shuffled)
+                              right_image, image_size, attention, gaze, actor, shuffled, peripheral_offset)
                 trial.init_video_stim=self.init_video
                 if trial.gaze == 'cong':
                     trial.init_frame = self.video_init_frames[self.congruent_actor][trial.attention][shuffled]
@@ -213,7 +218,7 @@ class Trial:
     """
 
     def __init__(self, win, code, init_stim_frames, min_attending_frames, max_attending_frames, left_image, right_image,
-                 attention, gaze, actor, shuffled):
+                 image_size, attention, gaze, actor, shuffled, peripheral_offset):
         """
         Initialize class
         :param win - window to use
@@ -223,9 +228,11 @@ class Trial:
         :param max_attending_frames - max frames to wait for stimulus fixation before aborting trial
         :param left_image - stimulus on left
         :param right_image - stimulus on right
+        :param image_size - left and right stimulus size in degrees
         :param attention - l or r - which stimulus to highlight
         :param gaze - cong or inco - congruent or incongruent gaze
         :param actor - which actor to show
+        :param peripheral_offset - left and right image offset in degrees
         """
         self.win = win
         self.code = code
@@ -233,13 +240,12 @@ class Trial:
         self.min_attending_frames = min_attending_frames
         self.max_attending_frames = max_attending_frames
         self.images = {
-            'l': visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images', left_image)),
-            'r': visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images', right_image))
+            'l': visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images', left_image), units='deg', size=image_size),
+            'r': visual.ImageStim(self.win, os.path.join(DATA_DIR, 'images', right_image), units='deg', size=image_size)
         }
-        self.images['l'].size *= .95
-        self.images['r'].size *= .95
-        self.images['l'].pos = [-15, 0]
-        self.images['r'].pos = [15, 0]
+        self.peripheral_offset=peripheral_offset
+        self.images['l'].pos = [-self.peripheral_offset, 0]
+        self.images['r'].pos = [self.peripheral_offset, 0]
         self.highlight = visual.Rect(self.win, width=self.images['l'].size[0] + 1, height=self.images['r'].size[1] + 1)
         self.highlight.lineColor = [1, -1, -1]
         self.highlight.lineWidth = 10
@@ -324,18 +330,24 @@ class Trial:
 
             # Check if looking at right stimulus
             if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
-                                         self.images[self.attention].size[0] / 2.0+2, self.win):
+                                         self.images[self.attention].size[0] / 2.0+3, self.win):
+                if gaze_debug is not None:
+                    gaze_debug.fillColor = (-1, -1, 1)
                 attending_frames += 1
                 if attending_frames == 1:
                     self.win.callOnFlip(send_event, ns, eyetracker, 'att1', 'attn stim', self.code_table)
             else:
+                if gaze_debug is not None:
+                    gaze_debug.fillColor = (1, -1, -1)
                 attending_frames = 0
+        if gaze_debug is not None:
+            gaze_debug.fillColor = (1, -1, -1)
 
         return attending_frames
 
     def play_movie(self, ns, eyetracker, mouse, gaze_debug):
-        self.images['l'].pos = [-15, 0]
-        self.images['r'].pos = [15, 0]
+        self.images['l'].pos = [-self.peripheral_offset, 0]
+        self.images['r'].pos = [self.peripheral_offset, 0]
 
         # Play movie
         self.win.callOnFlip(send_event, ns, eyetracker, 'mov1', 'movie start', self.code_table)
@@ -495,7 +507,7 @@ class ActorImage:
     """
     Image of an actor for preferential gaze
     """
-    def __init__(self, win, actor, filename):
+    def __init__(self, win, actor, filename, size):
         """
         Initialize class
         :param win: window to use
@@ -504,8 +516,7 @@ class ActorImage:
         """
         self.actor = actor
         self.filename = filename
-        self.stim = visual.ImageStim(win, os.path.join(DATA_DIR, 'images', self.filename))
-        self.stim.size *= 1.5
+        self.stim = visual.ImageStim(win, os.path.join(DATA_DIR, 'images', self.filename), units='deg', size=size)
 
 
 class PreferentialGaze:
