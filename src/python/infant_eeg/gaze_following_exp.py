@@ -266,9 +266,10 @@ class Trial:
         self.events=[]
 
     def add_event(self, ns, eye_tracker, code, label, table):
-        self.events.append(Event(code, label, table))
+        trial_event=Event(code, label, table)
+        self.events.append(trial_event)
         if eye_tracker is not None:
-            eye_tracker.recordEvent(code, label, table)
+            eye_tracker.recordEvent(trial_event)
 
     def show_init_video(self, ns, eyetracker, mouse, gaze_debug):
         self.win.callOnFlip(self.add_event, ns, eyetracker, 'imov', 'init movie', self.code_table)
@@ -416,7 +417,7 @@ class Trial:
 
         for trial_event in self.events:
             if ns is not None:
-                ns.send_event(trial_event.code, label=trial_event.label, timestamp=trial_event.timestamp[0], table=trial_event.table)
+                ns.send_event(trial_event.code, label=trial_event.label, timestamp=trial_event.timestamp, table=trial_event.table)
         self.events=[]
 
 class Block:

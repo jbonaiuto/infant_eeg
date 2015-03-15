@@ -102,9 +102,10 @@ class Block:
         event.waitKeys()
 
     def add_trial_event(self, ns, eye_tracker, code, label, table):
-        self.trial_events.append(Event(code, label, table))
+        trial_event=Event(code, label, table)
+        self.trial_events.append(trial_event)
         if eye_tracker is not None:
-            eye_tracker.recordEvent(code, label, table)
+            eye_tracker.recordEvent(trial_event)
 
     def run(self, ns, eyetracker, mouse, gaze_debug, distractor_set, debug_sq):
         """
@@ -164,7 +165,7 @@ class Block:
 
             for trial_event in self.trial_events:
                 if ns is not None:
-                    ns.send_event(trial_event.code, label=trial_event.label, timestamp=trial_event.timestamp[0], table=trial_event.table)
+                    ns.send_event(trial_event.code, label=trial_event.label, timestamp=trial_event.timestamp, table=trial_event.table)
             self.trial_events=[]
 
             # Check user input

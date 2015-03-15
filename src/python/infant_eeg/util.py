@@ -2,13 +2,15 @@ import math
 #from psychopy.tools.monitorunittools import deg2pix
 from psychopy.misc import deg2pix
 from egi import threaded as egi
+from infant_eeg.experiment import Event
 
 
 def send_event(ns, eye_tracker, code, label, table):
+    trial_event=Event(code, label, table)
     if ns is not None:
-        ns.send_event(code, label=label, timestamp=egi.ms_localtime(), table=table)
+        ns.send_event(trial_event.code, label=trial_event.label, timestamp=trial_event.timestamp, table=trial_event.table)
     if eye_tracker is not None:
-        eye_tracker.recordEvent(code, label, table)
+        eye_tracker.recordEvent(trial_event)
 
 
 def deg2norm_x(position, window):

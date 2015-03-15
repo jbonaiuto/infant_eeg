@@ -219,5 +219,5 @@ class Event:
     def __init__(self, code, label, table):
         self.code=code
         self.label=label
-        self.timestamp=egi.ms_localtime(),
+        self.timestamp=egi.ms_localtime()
         self.table=table

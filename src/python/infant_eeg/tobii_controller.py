@@ -408,48 +408,58 @@ class TobiiController:
         self.datafile = None
 
     def recordEvent(self, event):
-        #t = self.syncmanager.convert_from_local_to_remote(self.clock.get_time())
-        t=self.syncmanager.convert_from_local_to_remote(event.timestamp)
-        self.eventData.append((t, (event.code, event.label, event.table)))
+        t = self.syncmanager.convert_from_local_to_remote(self.clock.get_time())
+        self.eventData.append((t, event.code, event.table))
 
     def flushData(self):
         if self.datafile is None:
             print 'data file is not set.'
             return
 
-        if len(self.gazeData) == 0:
+        if len(self.gazeData)==0:
             return
 
         timeStampStart = self.gazeData[0].Timestamp
+        gaze_events=[]
         for g in self.gazeData:
-            self.datafile.write('%.1f\t%.4f\t%.4f\t%.4f\t%d\t%.4f\t%.4f\t%.4f\t%d' % (
-                (g.Timestamp - timeStampStart) / 1000.0,
-                g.LeftGazePoint2D.x * self.win.size[0] if g.LeftValidity != 4 else -1.0,
-                g.LeftGazePoint2D.y * self.win.size[1] if g.LeftValidity != 4 else -1.0,
-                g.LeftPupil,
-                g.LeftValidity,
-                g.RightGazePoint2D.x * self.win.size[0] if g.RightValidity != 4 else -1.0,
-                g.RightGazePoint2D.y * self.win.size[1] if g.RightValidity != 4 else -1.0,
-                g.RightPupil,
-                g.RightValidity))
-            if g.LeftValidity == 4 and g.RightValidity == 4:  #not detected
-                ave = (-1.0, -1.0)
-            elif g.LeftValidity == 4:
-                ave = (g.RightGazePoint2D.x, g.RightGazePoint2D.y)
-            elif g.RightValidity == 4:
-                ave = (g.LeftGazePoint2D.x, g.LeftGazePoint2D.y)
+            gaze_events.append([(g.Timestamp-timeStampStart)/1000.0,g])
+        for e in self.eventData:
+            gaze_events.append([(e[0]-timeStampStart)/1000.0,e[1],e[2]])
+
+        gaze_events.sort(key=lambda tup: tup[0])
+
+        for gaze_event in gaze_events:
+            if len(gaze_event)==2:
+                time_stamp,g=gaze_event
+                self.datafile.write('%.1f\t%.4f\t%.4f\t%d\t%.4f\t%.4f\t%d'%(
+                    time_stamp,
+                    g.LeftGazePoint2D.x*self.win.size[0] if g.LeftValidity!=4 else -1.0,
+                    g.LeftGazePoint2D.y*self.win.size[1] if g.LeftValidity!=4 else -1.0,
+                    g.LeftValidity,
+                    g.RightGazePoint2D.x*self.win.size[0] if g.RightValidity!=4 else -1.0,
+                    g.RightGazePoint2D.y*self.win.size[1] if g.RightValidity!=4 else -1.0,
+                    g.RightValidity))
+                if g.LeftValidity == 4 and g.RightValidity == 4: #not detected
+                    ave = (-1.0,-1.0)
+                elif g.LeftValidity == 4:
+                    ave = (g.RightGazePoint2D.x,g.RightGazePoint2D.y)
+                elif g.RightValidity == 4:
+                    ave = (g.LeftGazePoint2D.x,g.LeftGazePoint2D.y)
+                else:
+                    ave = (.5*(g.LeftGazePoint2D.x+g.RightGazePoint2D.x)*self.win.size[0],
+                           .5*(g.LeftGazePoint2D.y+g.RightGazePoint2D.y)*self.win.size[1])
+
+                self.datafile.write('\t%.4f\t%.4f\t'%ave)
+                self.datafile.write('\n')
             else:
-                ave = (.5 * (g.LeftGazePoint2D.x + g.RightGazePoint2D.x) * self.win.size[0],
-                       .5 * (g.LeftGazePoint2D.y + g.RightGazePoint2D.y) * self.win.size[1])
-
-            self.datafile.write('\t%.4f\t%.4f\t' % ave)
-            self.datafile.write('\n')
-
-        formatstr = '%.1f' + '\t' * 11 + '%s\n'
-        for t, (e, label, table) in self.eventData:
-            tablestr=','.join('%s:%s' % (key, val) for key, val in table.iteritems())
-            eventstr = '%s,%s,%s' % (e, label, tablestr)
-            self.datafile.write(formatstr % ((t - timeStampStart) / 1000.0, eventstr))
+                time_stamp,event_str,table=gaze_event
+                formatstr = '%.1f'+'\t'*9+'%s\t%s\n'
+                table_str=''
+                for idx,(key,val) in enumerate(table.iteritems()):
+                    if idx>0:
+                        table_str+=','
+                    table_str+='%s:%s' % (key,val)
+                self.datafile.write(formatstr % (time_stamp,event_str,table_str))
 
         self.gazeData = []
         self.eventData = []
