@@ -14,7 +14,8 @@ if __name__ == '__main__':
         'age': '',
         'gender': '',
         'experimenter_id': '',
-        'monitor distance': '57',
+        'monitor': ['viewsonic','tobii'],
+        'monitor distance': '65',
         'experiment': ['FacialMovement','GazeFollowing'],
         'congruent actor': ['CG', 'FO'],
         'incongruent actor': ['CG', 'FO'],
@@ -27,7 +28,8 @@ if __name__ == '__main__':
     dlg = gui.DlgFromDict(
         expInfo,
         order=['experiment', 'experimenter_id', 'date', 'child_id', 'gender', 'diagnosis', 'age', 'session',
-               'congruent actor', 'incongruent actor', 'monitor distance', 'eeg', 'eyetracking source', 'debug mode'],
+               'congruent actor', 'incongruent actor', 'monitor','monitor distance', 'eeg', 'eyetracking source',
+               'debug mode'],
         title='Experiment Settings',
         fixed=['dateStr']
     )

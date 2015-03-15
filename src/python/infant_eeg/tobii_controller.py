@@ -407,9 +407,10 @@ class TobiiController:
 
         self.datafile = None
 
-    def recordEvent(self, event, label, table):
-        t = self.syncmanager.convert_from_local_to_remote(self.clock.get_time())
-        self.eventData.append((t, (event, label, table)))
+    def recordEvent(self, event):
+        #t = self.syncmanager.convert_from_local_to_remote(self.clock.get_time())
+        t=self.syncmanager.convert_from_local_to_remote(event.timestamp)
+        self.eventData.append((t, (event.code, event.label, event.table)))
 
     def flushData(self):
         if self.datafile is None:

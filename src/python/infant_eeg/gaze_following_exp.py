@@ -1,4 +1,4 @@
-from infant_eeg.experiment import Experiment
+from infant_eeg.experiment import Experiment, Event
 import os
 from psychopy import visual, event
 from xml.etree import ElementTree
@@ -46,7 +46,7 @@ class GazeFollowingExperiment(Experiment):
             # clear any keystrokes before starting
             event.clearEvents()
 
-            self.preferential_gaze.run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug)
+            self.preferential_gaze.run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug, self.debug_sq)
 
             # Check user input
             all_keys = event.getKeys()
@@ -84,7 +84,7 @@ class GazeFollowingExperiment(Experiment):
 
                 # Run block
                 resp=self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug,
-                                                 self.distractor_set)
+                                                 self.distractor_set, self.debug_sq)
                 if len(resp):
                     # Quit experiment
                     if resp[0].upper() in ['Q', 'ESCAPE']:
@@ -263,22 +263,30 @@ class Trial:
             'shuf': self.shuffled,
             'actr': str(self.actor)
         }
+        self.events=[]
+
+    def add_event(self, ns, eye_tracker, code, label, table):
+        self.events.append(Event(code, label, table))
+        if eye_tracker is not None:
+            eye_tracker.recordEvent(code, label, table)
 
     def show_init_video(self, ns, eyetracker, mouse, gaze_debug):
-        self.win.callOnFlip(send_event, ns, eyetracker, 'imov', 'init movie', self.code_table)
+        self.win.callOnFlip(self.add_event, ns, eyetracker, 'imov', 'init movie', self.code_table)
         while not self.init_video_stim.stim.status == visual.FINISHED:
             self.init_video_stim.stim.draw()
             draw_eye_debug(gaze_debug, eyetracker, mouse)
             self.win.flip()
 
-    def show_init_stimulus(self, ns, eyetracker, mouse, gaze_debug):
+    def show_init_stimulus(self, ns, eyetracker, mouse, gaze_debug, debug_sq):
         # Show two stimuli and initial frame of movie
-        self.win.callOnFlip(send_event, ns, eyetracker, 'ima1', 'stim start', self.code_table)
+        self.win.callOnFlip(self.add_event, ns, eyetracker, 'ima1', 'stim start', self.code_table)
         for i in range(self.init_stim_frames):
             self.init_frame.draw()
             for image in self.images.values():
                 image.draw()
             draw_eye_debug(gaze_debug, eyetracker, mouse)
+            if debug_sq is not None:
+                debug_sq.draw()
             self.win.flip()
 
     def highlight_peripheral_stimulus(self, ns, eyetracker, mouse, gaze_debug):
@@ -288,7 +296,7 @@ class Trial:
         attending_frames = 0
         highlight_on = False
         idx = 0
-        self.win.callOnFlip(send_event, ns, eyetracker, 'ima2', 'attn start', self.code_table)
+        self.win.callOnFlip(self.add_event, ns, eyetracker, 'ima2', 'attn start', self.code_table)
         while attending_frames < self.min_attending_frames and idx < self.max_attending_frames:
             # Draw init frame of movie and two stimuli
             self.init_frame.draw()
@@ -335,7 +343,7 @@ class Trial:
                     gaze_debug.fillColor = (-1, -1, 1)
                 attending_frames += 1
                 if attending_frames == 1:
-                    self.win.callOnFlip(send_event, ns, eyetracker, 'att1', 'attn stim', self.code_table)
+                    self.win.callOnFlip(self.add_event, ns, eyetracker, 'att1', 'attn stim', self.code_table)
             else:
                 if gaze_debug is not None:
                     gaze_debug.fillColor = (1, -1, -1)
@@ -350,7 +358,7 @@ class Trial:
         self.images['r'].pos = [self.peripheral_offset, 0]
 
         # Play movie
-        self.win.callOnFlip(send_event, ns, eyetracker, 'mov1', 'movie start', self.code_table)
+        self.win.callOnFlip(self.add_event, ns, eyetracker, 'mov1', 'movie start', self.code_table)
 
         attending_frames = 0
         while not self.video_stim.stim.status == visual.FINISHED:
@@ -378,14 +386,14 @@ class Trial:
                     gaze_debug.fillColor = (-1, -1, 1)
                 attending_frames += 1
                 if attending_frames == 1:
-                    self.win.callOnFlip(send_event, ns, eyetracker, 'att2', 'attn face', self.code_table)
+                    self.win.callOnFlip(self.add_event, ns, eyetracker, 'att2', 'attn face', self.code_table)
             else:
                 if gaze_debug is not None:
                     gaze_debug.fillColor = (1, -1, -1)
         if gaze_debug is not None:
             gaze_debug.fillColor = (1, -1, -1)
 
-    def run(self, ns, eyetracker, mouse, gaze_debug):
+    def run(self, ns, eyetracker, mouse, gaze_debug, debug_sq):
         """
         Run trial
         :param ns - connection to netstation
@@ -399,13 +407,17 @@ class Trial:
 
         self.show_init_video(ns, eyetracker, mouse, gaze_debug)
 
-        self.show_init_stimulus(ns, eyetracker, mouse, gaze_debug)
+        self.show_init_stimulus(ns, eyetracker, mouse, gaze_debug, debug_sq)
 
         attending_frames = self.highlight_peripheral_stimulus(ns, eyetracker, mouse, gaze_debug)
 
         if attending_frames >= self.min_attending_frames:
             self.play_movie(ns, eyetracker, mouse, gaze_debug)
 
+        for trial_event in self.events:
+            if ns is not None:
+                ns.send_event(trial_event.code, label=trial_event.label, timestamp=trial_event.timestamp[0], table=trial_event.table)
+        self.events=[]
 
 class Block:
     """
@@ -435,7 +447,7 @@ class Block:
         self.win.flip()
         event.waitKeys()
 
-    def run(self, ns, eyetracker, mouse, gaze_debug, distractor_set):
+    def run(self, ns, eyetracker, mouse, gaze_debug, distractor_set, debug_sq):
         """
         Run the block
         :param ns - connection to netstation
@@ -468,7 +480,7 @@ class Block:
 
             # Run trial
             trial_idx = trial_order[t]
-            self.trials[trial_idx].run(ns, eyetracker, mouse, gaze_debug)
+            self.trials[trial_idx].run(ns, eyetracker, mouse, gaze_debug, debug_sq)
 
             # Check user input
             all_keys = event.getKeys()
@@ -535,7 +547,7 @@ class PreferentialGaze:
         self.actors = actors
         self.duration_frames = duration_frames
 
-    def run(self, ns, eyetracker, mouse, gaze_debug):
+    def run(self, ns, eyetracker, mouse, gaze_debug, debug_sq):
         """
         Run trial
         :param ns: netstation connection
@@ -563,5 +575,7 @@ class PreferentialGaze:
             for actor in self.actors:
                 actor.stim.draw()
             draw_eye_debug(gaze_debug, eyetracker, mouse)
+            if debug_sq is not None:
+                debug_sq.draw()
             self.win.flip()
         send_event(ns, eyetracker, 'pgen', "pg end", {'left': left_actor, 'rght': right_actor})

@@ -39,13 +39,15 @@ class Experiment:
 
         # Window to use
         wintype = 'pyglet'  # use pyglet if possible, it's faster at event handling
-        mon = monitors.Monitor(MONITOR, distance=float(exp_info['monitor distance']))
+        # Add 14cm to distance - this is distance from eyetracker to monitor
+        mon = monitors.Monitor(exp_info['monitor'], distance=float(exp_info['monitor distance']))
         self.win = Window(
             [1280, 1024],
             monitor=mon,
             screen=SCREEN,
             units="deg",
             fullscr=True,
+            #fullscr=False,
             color=[-1, -1, -1],
             winType=wintype)
         self.win.setMouseVisible(False)
@@ -54,6 +56,12 @@ class Experiment:
         # Measure frame rate
         self.mean_ms_per_frame, std_ms_per_frame, median_ms_per_frame = visual.getMsPerFrame(self.win, nFrames=60,
                                                                                              showVisual=True)
+
+        self.debug_sq=None
+        if exp_info['monitor']=='tobii':
+            self.debug_sq=psychopy.visual.Rect(self.win, width=30, height=30, units='pix')
+            self.debug_sq.setFillColor((1,1,1))
+            self.debug_sq.setPos((630,-500))
 
         # Compute distractor duration in frames based on frame rate
         distractor_duration_frames = int(2000.0/self.mean_ms_per_frame)
@@ -206,3 +214,10 @@ class Experiment:
         :param file_name: file to read definition from
         """
         pass
+
+class Event:
+    def __init__(self, code, label, table):
+        self.code=code
+        self.label=label
+        self.timestamp=egi.ms_localtime(),
+        self.table=table

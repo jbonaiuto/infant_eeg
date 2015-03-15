@@ -1,10 +1,10 @@
-from infant_eeg.experiment import Experiment
+from infant_eeg.experiment import Experiment, Event
 from xml.etree import ElementTree
 import numpy as np
 from psychopy import event, visual
 from infant_eeg.stim import MovieStimulus
 from infant_eeg.util import send_event, draw_eye_debug
-
+from egi import threaded as egi
 
 class FacialMovementExperiment(Experiment):
     """
@@ -24,7 +24,7 @@ class FacialMovementExperiment(Experiment):
 
             # Run block
             resp=self.blocks[block_name].run(self.ns, self.eye_tracker, self.mouse, self.gaze_debug,
-                                             self.distractor_set)
+                                             self.distractor_set, self.debug_sq)
             if len(resp):
                 # Quit experiment
                 if resp[0].upper() in ['Q', 'ESCAPE']:
@@ -91,6 +91,7 @@ class Block:
         self.min_iti_frames = min_iti_frames
         self.max_iti_frames = max_iti_frames
         self.stimuli = []
+        self.trial_events=[]
 
     def pause(self):
         """
@@ -100,7 +101,12 @@ class Block:
         self.win.flip()
         event.waitKeys()
 
-    def run(self, ns, eyetracker, mouse, gaze_debug, distractor_set):
+    def add_trial_event(self, ns, eye_tracker, code, label, table):
+        self.trial_events.append(Event(code, label, table))
+        if eye_tracker is not None:
+            eye_tracker.recordEvent(code, label, table)
+
+    def run(self, ns, eyetracker, mouse, gaze_debug, distractor_set, debug_sq):
         """
         Run the block
         :param ns: connection to netstation
@@ -138,17 +144,28 @@ class Block:
             event.clearEvents()
 
             # Play movie
-            self.win.callOnFlip(send_event, ns, eyetracker, 'mov1', 'movie start',
+            self.win.callOnFlip(self.add_trial_event, ns, eyetracker, 'mov1', 'movie start',
                                 {'code': self.code,
                                  'mvmt': self.stimuli[video_idx].movement,
                                  'actr': self.stimuli[video_idx].actor})
             while not self.stimuli[video_idx].stim.status == visual.FINISHED:
                 self.stimuli[video_idx].stim.draw()
                 draw_eye_debug(gaze_debug, eyetracker, mouse)
+                if debug_sq is not None:
+                    debug_sq.draw()
                 self.win.flip()
 
             # Tell netstation the movie has stopped
-            send_event(ns, eyetracker, 'mov2', 'movie end', {})
+            self.add_trial_event(ns, eyetracker, 'mov2', 'movie end', {})
+
+            # Black screen for delay
+            for i in range(iti_frames):
+                self.win.flip()
+
+            for trial_event in self.trial_events:
+                if ns is not None:
+                    ns.send_event(trial_event.code, label=trial_event.label, timestamp=trial_event.timestamp[0], table=trial_event.table)
+            self.trial_events=[]
 
             # Check user input
             all_keys = event.getKeys()
@@ -170,10 +187,6 @@ class Block:
                     distractor_set.show_video()
 
                 event.clearEvents()
-
-            # Black screen for delay
-            for i in range(iti_frames):
-                self.win.flip()
 
         # Stop netstation recording
         send_event(ns, eyetracker, 'blk2', 'block end', {'code': self.code})
