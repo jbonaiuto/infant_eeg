@@ -1,3 +1,4 @@
+from psychopy.tools.monitorunittools import pix2deg, deg2pix
 from infant_eeg.experiment import Experiment, Event
 import os
 from psychopy import visual, event
@@ -365,7 +366,7 @@ class Trial:
         idx = 0
         attending_frames = 0
         self.win.callOnFlip(self.add_event, ns, eyetracker, 'ima2', 'attn start', self.code_table)
-        while resp is None:
+        while resp is None and idx < self.max_attending_frames:
             # Draw init frame of movie and two stimuli
             self.init_frame.draw()
             current_pos = self.images[self.attention].pos
@@ -433,6 +434,9 @@ class Trial:
 
         if gaze_debug is not None:
             gaze_debug.fillColor = (1, -1, -1)
+
+        if idx>=self.max_attending_frames and resp is None:
+            return ''
 
         return None
 
@@ -640,6 +644,14 @@ class PreferentialGaze:
         self.win = win
         self.actors = actors
         self.duration_frames = duration_frames
+        self.left_roi=visual.Rect(self.win, width=550, height=750, units='pix')
+        self.left_roi.pos=[deg2pix(-12,win.monitor),deg2pix(0,win.monitor)]
+        self.left_roi.lineColor = [1, -1, -1]
+        self.left_roi.lineWidth = 10
+        self.right_roi=visual.Rect(self.win, width=550, height=750, units='pix')
+        self.right_roi.pos=[deg2pix(12,win.monitor),deg2pix(0,win.monitor)]
+        self.right_roi.lineColor = [1, -1, -1]
+        self.right_roi.lineWidth = 10
 
     def run(self, ns, eyetracker, mouse, gaze_debug, debug_sq):
         """
@@ -669,6 +681,9 @@ class PreferentialGaze:
             for actor in self.actors:
                 actor.stim.draw()
             draw_eye_debug(gaze_debug, eyetracker, mouse)
+            if gaze_debug is not None:
+                self.left_roi.draw()
+                self.right_roi.draw()
             if debug_sq is not None:
                 debug_sq.draw()
             self.win.flip()

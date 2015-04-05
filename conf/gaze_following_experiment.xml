@@ -16,112 +16,112 @@
     </videos>
 
     <blocks>
-        <block name="bk01" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk01" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk02" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk02" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk03" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk03" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk04" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk04" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_i" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="inco" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk05" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk05" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_i" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk06" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk06" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_i" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk07" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk07" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_i" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk08" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk08" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_i" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_i" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="inco" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk09" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk09" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_i" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk10" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk10" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_i" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk11" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk11" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_i" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk12" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk12" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_i" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_i" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="inco" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk13" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk13" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_c" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="cong" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk14" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk14" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk15" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk15" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong" shuffled="1" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
             </trials>
         </block>
-        <block name="bk16" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2000.0" min_iti="800.0" max_iti="1200.0">
+        <block name="bk16" num_trials="3" init_stim="500.0" min_attending="200.0" max_attending="2500.0" min_iti="800.0" max_iti="1200.0">
             <trials>
                 <trial code="r_c" left_image="football.jpg" right_image="football.jpg" attention="r" gaze="cong" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
                 <trial code="l_i" left_image="football.jpg" right_image="football.jpg" attention="l" gaze="inco" shuffled="0" width_degrees="8" height_degrees="8" peripheral_offset="17"/>
