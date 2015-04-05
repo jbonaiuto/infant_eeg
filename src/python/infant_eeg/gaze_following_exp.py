@@ -290,7 +290,7 @@ class Trial:
                 debug_sq.draw()
             self.win.flip()
 
-    def highlight_peripheral_stimulus(self, ns, eyetracker, mouse, gaze_debug):
+    def highlight_peripheral_stimulus_gaze(self, ns, eyetracker, mouse, gaze_debug):
         # Set which stimulus to highlight
         self.highlight.pos = self.images[self.attention].pos
         # Show initial frame of video until highlighted stimulus if fixated on or abort
@@ -354,6 +354,88 @@ class Trial:
 
         return attending_frames
 
+    def highlight_peripheral_stimulus_click(self, ns, eyetracker, mouse, gaze_debug):
+        # Set which stimulus to highlight
+        self.highlight.pos = self.images[self.attention].pos
+
+        resp = None
+        mouse.clickReset()
+
+        highlight_on = False
+        idx = 0
+        attending_frames = 0
+        self.win.callOnFlip(self.add_event, ns, eyetracker, 'ima2', 'attn start', self.code_table)
+        while resp is None:
+            # Draw init frame of movie and two stimuli
+            self.init_frame.draw()
+            current_pos = self.images[self.attention].pos
+            if idx % 5 == 0:
+                new_pos = current_pos
+                if current_pos[1] == 0 or current_pos[1] == -1:
+                    new_pos[1] = 1
+                else:
+                    new_pos[1] = -1
+                self.images[self.attention].setPos(new_pos)
+                self.highlight.setPos(self.images[self.attention].pos)
+
+            for image in self.images.values():
+                image.draw()
+
+            # Highlight stimulus
+            if idx % 5 == 0:
+                if highlight_on:
+                    highlight_on = False
+                else:
+                    highlight_on = True
+                if highlight_on:
+                    self.highlight.draw()
+
+            draw_eye_debug(gaze_debug, eyetracker, mouse)
+
+            self.win.flip()
+            idx += 1
+
+            # Get gaze position from eyetracker or mouse
+            gaze_position = (0, 0)
+            if eyetracker is not None:
+                gaze_position = eyetracker.getCurrentGazePosition()
+                gaze_position = (0.5 * (gaze_position[0] + gaze_position[2]),
+                                 0.5 * (gaze_position[1] + gaze_position[3]))
+            elif mouse is not None:
+                gaze_position = mouse.getPos()
+
+            # Check if looking at right stimulus
+            if fixation_within_tolerance(gaze_position, self.images[self.attention].pos,
+                                         self.images[self.attention].size[0] / 2.0+3, self.win):
+                if gaze_debug is not None:
+                    gaze_debug.fillColor = (-1, -1, 1)
+                attending_frames += 1
+                if attending_frames == 1:
+                    self.win.callOnFlip(self.add_event, ns, eyetracker, 'att1', 'attn stim', self.code_table)
+            else:
+                if gaze_debug is not None:
+                    gaze_debug.fillColor = (1, -1, -1)
+                attending_frames = 0
+
+            buttons, times = mouse.getPressed(getTime=True)
+            if buttons[0]:
+                resp='l'
+            elif buttons[2]:
+                resp = 'r'
+
+            # Check user input
+            all_keys = event.getKeys()
+            if len(all_keys):
+                if all_keys[0].upper() in ['Q', 'ESCAPE'] or all_keys[0].upper() == 'P' or all_keys[0].upper() == 'E' or\
+                                all_keys[0].upper() == 'G' or all_keys[0].upper() == 'D':
+                    return all_keys[0].upper()
+                event.clearEvents()
+
+        if gaze_debug is not None:
+            gaze_debug.fillColor = (1, -1, -1)
+
+        return None
+
     def play_movie(self, ns, eyetracker, mouse, gaze_debug):
         self.images['l'].pos = [-self.peripheral_offset, 0]
         self.images['r'].pos = [self.peripheral_offset, 0]
@@ -410,15 +492,24 @@ class Trial:
 
         self.show_init_stimulus(ns, eyetracker, mouse, gaze_debug, debug_sq)
 
-        attending_frames = self.highlight_peripheral_stimulus(ns, eyetracker, mouse, gaze_debug)
+        # attending_frames = self.highlight_peripheral_stimulus_gaze(ns, eyetracker, mouse, gaze_debug)
+        #
+        # if attending_frames >= self.min_attending_frames:
+        #     self.play_movie(ns, eyetracker, mouse, gaze_debug)
+        cmd=self.highlight_peripheral_stimulus_click(ns, eyetracker, mouse, gaze_debug)
 
-        if attending_frames >= self.min_attending_frames:
+        if cmd is None:
             self.play_movie(ns, eyetracker, mouse, gaze_debug)
+        else:
+            return cmd
 
         for trial_event in self.events:
             if ns is not None:
                 ns.send_event(trial_event.code, label=trial_event.label, timestamp=trial_event.timestamp, table=trial_event.table)
         self.events=[]
+
+        return cmd
+
 
 class Block:
     """
@@ -481,29 +572,31 @@ class Block:
 
             # Run trial
             trial_idx = trial_order[t]
-            self.trials[trial_idx].run(ns, eyetracker, mouse, gaze_debug, debug_sq)
+            cmd=self.trials[trial_idx].run(ns, eyetracker, mouse, gaze_debug, debug_sq)
 
             # Check user input
             all_keys = event.getKeys()
             if len(all_keys):
+                cmd=all_keys[0].upper()
+            if cmd is not None:
                 # Quit experiment
-                if all_keys[0].upper() in ['Q', 'ESCAPE']:
-                    return all_keys[0].upper()
+                if cmd in ['Q', 'ESCAPE']:
+                    return cmd
                 # Pause block
-                elif all_keys[0].upper() == 'P':
+                elif cmd == 'P':
                     self.pause()
                 # End block
-                elif all_keys[0].upper() == 'E':
-                    return all_keys[0].upper()
+                elif cmd == 'E':
+                    return cmd
                 # Show distractors
-                elif all_keys[0].upper() == 'D':
+                elif cmd == 'D':
                     distractor_set.show_video()
                 # # Show distractor video
-                # elif all_keys[0].upper() == 'V':
+                # elif cmd == 'V':
                 #     distractor_set.show_video()
                 # Run preferential gaze
-                elif all_keys[0].upper() == 'G':
-                    return all_keys[0].upper()
+                elif cmd == 'G':
+                    return cmd
 
                 event.clearEvents()
 
