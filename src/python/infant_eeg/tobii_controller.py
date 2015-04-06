@@ -431,13 +431,15 @@ class TobiiController:
         for gaze_event in gaze_events:
             if len(gaze_event)==2:
                 time_stamp,g=gaze_event
-                self.datafile.write('%.1f\t%.4f\t%.4f\t%d\t%.4f\t%.4f\t%d'%(
+                self.datafile.write('%.1f\t%.4f\t%.4f\t%.4f\t%d\t%.4f\t%.4f\t%.4f\t%d' % (
                     time_stamp,
                     g.LeftGazePoint2D.x*self.win.size[0] if g.LeftValidity!=4 else -1.0,
                     g.LeftGazePoint2D.y*self.win.size[1] if g.LeftValidity!=4 else -1.0,
+                g.LeftPupil,
                     g.LeftValidity,
                     g.RightGazePoint2D.x*self.win.size[0] if g.RightValidity!=4 else -1.0,
                     g.RightGazePoint2D.y*self.win.size[1] if g.RightValidity!=4 else -1.0,
+                g.RightPupil,
                     g.RightValidity))
                 if g.LeftValidity == 4 and g.RightValidity == 4: #not detected
                     ave = (-1.0,-1.0)
@@ -453,12 +455,8 @@ class TobiiController:
                 self.datafile.write('\n')
             else:
                 time_stamp,event_str,table=gaze_event
-                formatstr = '%.1f'+'\t'*9+'%s\t%s\n'
-                table_str=''
-                for idx,(key,val) in enumerate(table.iteritems()):
-                    if idx>0:
-                        table_str+=','
-                    table_str+='%s:%s' % (key,val)
+                formatstr = '%.1f'+'\t'*11+'%s,%s\n'
+                table_str=','.join('%s:%s' % (key, val) for key, val in table.iteritems())
                 self.datafile.write(formatstr % (time_stamp,event_str,table_str))
 
         self.gazeData = []
