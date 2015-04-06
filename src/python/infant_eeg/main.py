@@ -19,6 +19,7 @@ if __name__ == '__main__':
         'experiment': ['FacialMovement','GazeFollowing'],
         'congruent actor': ['CG', 'FO'],
         'incongruent actor': ['CG', 'FO'],
+        'preferential gaze': False,
         'eeg': True,
         'eyetracking source': ['tobii', 'mouse', 'none'],
         'debug mode': False
@@ -28,8 +29,8 @@ if __name__ == '__main__':
     dlg = gui.DlgFromDict(
         expInfo,
         order=['experiment', 'experimenter_id', 'date', 'child_id', 'gender', 'diagnosis', 'age', 'session',
-               'congruent actor', 'incongruent actor', 'monitor','monitor distance', 'eeg', 'eyetracking source',
-               'debug mode'],
+               'congruent actor', 'incongruent actor', 'preferential gaze', 'monitor','monitor distance', 'eeg',
+               'eyetracking source', 'debug mode'],
         title='Experiment Settings',
         fixed=['dateStr']
     )

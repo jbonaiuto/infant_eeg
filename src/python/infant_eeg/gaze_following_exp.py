@@ -74,7 +74,8 @@ class GazeFollowingExperiment(Experiment):
         cont = True
 
         # Run preferential gaze trials
-        cont = self.run_preferential_gaze()
+        if self.exp_info['preferential gaze']:
+            cont = self.run_preferential_gaze()
 
         # Run blocks
         if cont:
@@ -100,7 +101,7 @@ class GazeFollowingExperiment(Experiment):
                     self.eye_tracker.flushData()
 
         # Run preferential gaze trials
-        if cont:
+        if cont and self.exp_info['preferential gaze']:
             self.run_preferential_gaze()
 
         # End experiment
