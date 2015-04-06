@@ -81,15 +81,17 @@ class Experiment:
             ms_localtime = egi.ms_localtime
 
         self.eye_tracker = None
-        self.mouse = None
+        mouse_visible = False
         if exp_info['eyetracking source'] == 'tobii':
             # Initialize eyetracker
             self.eye_tracker = TobiiController(self.win)
             self.eye_tracker.waitForFindEyeTracker()
             self.eye_tracker.activate(EYETRACKER_NAME)
         elif exp_info['eyetracking source'] == 'mouse':
-            # Initialize mouse
-            self.mouse = event.Mouse(win=self.win)
+            mouse_visible = True
+
+        # Initialize mouse
+        self.mouse = event.Mouse(visible=mouse_visible, win=self.win)
 
         self.gaze_debug=None
         if self.exp_info['debug mode']:
