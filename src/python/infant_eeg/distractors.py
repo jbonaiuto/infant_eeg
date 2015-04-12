@@ -36,6 +36,10 @@ class DistractorSet:
         # load reward image
         self.reward_image = visual.ImageStim(win, reward_image_file)
 
+        self.last_video_played=-1
+        self.last_picture_shown=-1
+        self.last_sound_played=-1
+
         self.duration_frames = duration_frames
 
     def show_pictures_and_sounds(self):
@@ -51,8 +55,14 @@ class DistractorSet:
         # wait for a keypress
         while len(all_keys) == 0:
             # Pick random picture and sound
-            distractor_picture_idx = np.random.choice(range(len(self.pictures)))
-            distractor_sound_idx = np.random.choice(range(len(self.sounds)))
+            valid=False
+            while not valid:
+                distractor_picture_idx = np.random.choice(range(len(self.pictures)))
+                distractor_sound_idx = np.random.choice(range(len(self.sounds)))
+                if not distractor_picture_idx==self.last_picture_shown and not distractor_sound_idx==self.last_sound_played:
+                    valid=True
+            self.last_picture_shown=distractor_picture_idx
+            self.last_sound_played=distractor_sound_idx
 
             # Play sound
             self.sounds[distractor_sound_idx].play()
@@ -86,7 +96,13 @@ class DistractorSet:
         all_keys = []
 
         # Pick a video at random
-        video_idx=np.random.choice(range(len(self.video_files)))
+        valid=False
+        while not valid:
+            video_idx=np.random.choice(range(len(self.video_files)))
+            if not video_idx==self.last_video_played:
+                valid=True
+        self.last_video_played=video_idx
+
         video = visual.MovieStim(self.win, self.video_files[video_idx], size=[1280, 1024])
 
         # wait for a keypress
