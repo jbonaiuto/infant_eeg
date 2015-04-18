@@ -124,6 +124,8 @@ class GazeFollowingExperiment(Experiment):
         preferential_gaze_node = root_element.find('preferential_gaze')
         preferential_gaze_duration = float(preferential_gaze_node.attrib['duration'])
         self.preferential_gaze_trials = int(preferential_gaze_node.attrib['num_trials'])
+        attn_video_size=(float(preferential_gaze_node.attrib['attn_video_width_degrees']),
+                         float(preferential_gaze_node.attrib['attn_video_height_degrees']))
         actor_nodes = preferential_gaze_node.findall('actor')
         actor_images = []
         for actor_node in actor_nodes:
@@ -132,7 +134,8 @@ class GazeFollowingExperiment(Experiment):
             size=(float(actor_node.attrib['width_degrees']),float(actor_node.attrib['height_degrees']))
             actor_images.append(ActorImage(self.win, actor_name, filename, size))
         self.preferential_gaze = PreferentialGaze(self.win, actor_images,
-                                                  int(preferential_gaze_duration / self.mean_ms_per_frame))
+                                                  int(preferential_gaze_duration / self.mean_ms_per_frame),
+                                                  attn_video_size)
         self.congruent_actor = self.exp_info['congruent actor']
         self.incongruent_actor = self.exp_info['incongruent actor']
 
@@ -635,7 +638,7 @@ class PreferentialGaze:
     Preferential gaze trial
     """
 
-    def __init__(self, win, actors, duration_frames):
+    def __init__(self, win, actors, duration_frames, attn_video_size):
         """
         Initialize class
         :param win: window to use
@@ -653,6 +656,7 @@ class PreferentialGaze:
         self.right_roi.pos=[deg2pix(12,win.monitor),deg2pix(0,win.monitor)]
         self.right_roi.lineColor = [1, -1, -1]
         self.right_roi.lineWidth = 10
+        self.attn_video=MovieStimulus(self.win, '', '', 'attn.mpg', attn_video_size)
 
     def run(self, ns, eyetracker, mouse, gaze_debug, debug_sq):
         """
@@ -675,6 +679,22 @@ class PreferentialGaze:
             self.actors[1].stim.pos = [-12, 0]
             left_actor = self.actors[1].actor
             right_actor = self.actors[0].actor
+
+        event.clearEvents()
+        mouse.clickReset()
+        resp=None
+        self.attn_video.reload(self.win)
+        self.win.callOnFlip(send_event, ns, eyetracker, 'pgat', 'pg attn', {'left': left_actor, 'rght': right_actor})
+        while resp is None:
+            while not self.attn_video.stim.status == visual.FINISHED and resp is None:
+                self.attn_video.stim.draw()
+                self.win.flip()
+                buttons, times = mouse.getPressed(getTime=True)
+                if buttons[0] and times[0]>0:
+                    resp = 'l'
+                elif buttons[2] and times[2]>0:
+                    resp = 'r'
+            self.attn_video.reload(self.win)
 
         # Draw images
         self.win.callOnFlip(send_event, ns, eyetracker, 'pgst', 'pg start', {'left': left_actor, 'rght': right_actor})
