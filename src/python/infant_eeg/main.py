@@ -16,7 +16,7 @@ if __name__ == '__main__':
         'experimenter_id': '',
         'monitor': ['viewsonic','tobii'],
         'monitor distance': '65',
-        'experiment': ['FacialMovement','GazeFollowing'],
+        'experiment': ['FacialMovement','GazeFollowing','9mo FacialMovement'],
         'congruent actor': ['CG', 'FO'],
         'incongruent actor': ['CG', 'FO'],
         'preferential gaze': False,
@@ -39,6 +39,8 @@ if __name__ == '__main__':
         exp = None
         if expInfo['experiment'] == 'FacialMovement':
             exp = FacialMovementExperiment(expInfo, os.path.join(CONF_DIR, 'facial_movement_experiment.xml'))
+        elif expInfo['experiment'] == '9mo FacialMovement':
+            exp = NineMonthFacialMovementExperiment(expInfo, os.path.join(CONF_DIR, '9m_facial_movement_experiment.xml'))
         elif expInfo['experiment'] == 'GazeFollowing':
             exp = GazeFollowingExperiment(expInfo, os.path.join(CONF_DIR, 'gaze_following_experiment.xml'))
         if exp is not None:
