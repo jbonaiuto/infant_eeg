@@ -155,9 +155,9 @@ class Experiment:
                 print('Could not connect with NetStation!')
 
         # Initialize logging
-        logfile = os.path.join(DATA_DIR, 'logs', '%s_%s_%s.log' % (self.exp_info['child_id'],
-                                                                       self.exp_info['date'],
-                                                                       self.exp_info['session']))
+        logfile = os.path.join(DATA_DIR, 'logs', self.exp_info['experiment'], '%s_%s_%s.log' % (self.exp_info['child_id'],
+                                                                                                self.exp_info['date'],
+                                                                                                self.exp_info['session']))
 
         if self.eye_tracker is not None:
             self.eye_tracker.setDataFile(logfile, self.exp_info)
