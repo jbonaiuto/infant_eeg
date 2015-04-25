@@ -1,19 +1,19 @@
 <experiment name="9m_emotion_faces" type="block" num_blocks="50">
     <blocks>
-        <block name="blk1" num_trials="4" min_iti="800.0" max_iti="1200.0" movement_repeats="1" actor_repeats="1" min_init_frame="500" max_init_frame="1000">
+        <block name="blk1" num_trials="4" min_iti="800.0" max_iti="1200.0" code_repeats="1" actor_repeats="2" movement_repeats="2" min_init_frame="500" max_init_frame="1000">
             <videos>
-                <video movement="smil" actor="f01" file_name="F01-Joy-Face Forward.no_static.mpg" init_frame="F01-Joy-Face Forward.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
-                <video movement="smil" actor="f03" file_name="F03-Joy-Face Forward.no_static.mpg" init_frame="F03-Joy-Face Forward.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
-                <video movement="frwn" actor="f01" file_name="F01-Sadness-Face Forward.no_static.mpg" init_frame="F01-Sadness-Face Forward.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
-                <video movement="frwn" actor="f03" file_name="F03-Sadness-Face Forward.no_static.mpg" init_frame="F03-Sadness-Face Forward.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
-                <video movement="mopn" actor="f06" file_name="F06-MouthOpening-Face Forward.no_static.mpg" init_frame="F06-MouthOpening-Face Forward.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
-                <video movement="mopn" actor="f07" file_name="F07-MouthOpening-Face Forward.no_static.mpg" init_frame="F07-MouthOpening-Face Forward.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
-                <video movement="shsm" actor="f01" file_name="F01-Joy-Face Forward.shuffled.no_static.mpg" init_frame="F01-Joy-Face Forward.shuffled.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
-                <video movement="shsm" actor="f03" file_name="F03-Joy-Face Forward.shuffled.no_static.mpg" init_frame="F03-Joy-Face Forward.shuffled.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
-                <video movement="shfw" actor="f01" file_name="F01-Sadness-Face Forward.shuffled.no_static.mpg" init_frame="F01-Sadness-Face Forward.shuffled.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
-                <video movement="shfw" actor="f03" file_name="F03-Sadness-Face Forward.shuffled.no_static.mpg" init_frame="F03-Sadness-Face Forward.shuffled.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
-                <video movement="shmo" actor="f06" file_name="F06-MouthOpening-Face Forward.shuffled.no_static.mpg" init_frame="F06-MouthOpening-Face Forward.shuffled.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
-                <video movement="shmo" actor="f07" file_name="F07-MouthOpening-Face Forward.shuffled.no_static.mpg" init_frame="F07-MouthOpening-Face Forward.shuffled.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
+                <video movement="smil" actor="f01" code="joy" file_name="F01-Joy-Face Forward.no_static.mpg" init_frame="F01-Joy-Face Forward.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
+                <video movement="smil" actor="f03" code="joy" file_name="F03-Joy-Face Forward.no_static.mpg" init_frame="F03-Joy-Face Forward.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
+                <video movement="frwn" actor="f01" code="sad" file_name="F01-Sadness-Face Forward.no_static.mpg" init_frame="F01-Sadness-Face Forward.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
+                <video movement="frwn" actor="f03" code="sad" file_name="F03-Sadness-Face Forward.no_static.mpg" init_frame="F03-Sadness-Face Forward.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
+                <video movement="mopn" actor="f06" code="move" file_name="F06-MouthOpening-Face Forward.no_static.mpg" init_frame="F06-MouthOpening-Face Forward.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
+                <video movement="mopn" actor="f07" code="move" file_name="F07-MouthOpening-Face Forward.no_static.mpg" init_frame="F07-MouthOpening-Face Forward.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
+                <video movement="smil" actor="f01" code="shuf" file_name="F01-Joy-Face Forward.shuffled.no_static.mpg" init_frame="F01-Joy-Face Forward.shuffled.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
+                <video movement="smil" actor="f03" code="shuf" file_name="F03-Joy-Face Forward.shuffled.no_static.mpg" init_frame="F03-Joy-Face Forward.shuffled.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
+                <video movement="frwn" actor="f01" code="shuf" file_name="F01-Sadness-Face Forward.shuffled.no_static.mpg" init_frame="F01-Sadness-Face Forward.shuffled.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
+                <video movement="frwn" actor="f03" code="shuf" file_name="F03-Sadness-Face Forward.shuffled.no_static.mpg" init_frame="F03-Sadness-Face Forward.shuffled.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
+                <video movement="mopn" actor="f06" code="shuf" file_name="F06-MouthOpening-Face Forward.shuffled.no_static.mpg" init_frame="F06-MouthOpening-Face Forward.shuffled.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
+                <video movement="mopn" actor="f07" code="shuf" file_name="F07-MouthOpening-Face Forward.shuffled.no_static.mpg" init_frame="F07-MouthOpening-Face Forward.shuffled.no_static.png" width_degrees="36.55" height_degrees="28.9"/>
             </videos>
         </block>
     </blocks>

@@ -8,7 +8,7 @@ class MovieStimulus:
     A movie stimulus
     """
 
-    def __init__(self, win, movement, actor, file_name, size):
+    def __init__(self, win, movement, actor, file_name, size, code=None):
         """
         Initialize class
         :param: win - window to show movie in
@@ -21,6 +21,7 @@ class MovieStimulus:
         self.file_name = file_name
         self.stim = None
         self.size = size
+        self.code=code
         self.reload(win)
 
     def reload(self, win):

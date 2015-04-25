@@ -3,6 +3,7 @@ from infant_eeg.gaze_following_exp import GazeFollowingExperiment
 import os
 from psychopy import data, gui
 from infant_eeg.config import CONF_DIR
+from infant_eeg.nine_month_facial_movement_exp import NineMonthFacialMovementExperiment
 
 if __name__ == '__main__':
     # experiment parameters
