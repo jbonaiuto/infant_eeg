@@ -301,7 +301,7 @@ class Block:
                     return all_keys[0].upper()
                 # Show distractors
                 elif all_keys[0].upper() == 'D':
-                    distractor_set.show_pictures_and_sounds()
+                    distractor_set.show_video()
                 # Show distractor video
                 elif all_keys[0].upper() == 'V':
                     distractor_set.show_video()
