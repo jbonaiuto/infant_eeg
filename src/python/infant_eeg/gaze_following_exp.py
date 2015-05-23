@@ -508,8 +508,6 @@ class Trial:
 
         if cmd is None:
             self.play_movie(ns, eyetracker, mouse, gaze_debug)
-        else:
-            return cmd
 
         for trial_event in self.events:
             if ns is not None:
